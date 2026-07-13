@@ -3,89 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบเช็คสต๊อก</title>
+    <title>เช็คสต็อกร้านชามโปรด</title>
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-    <style>body { font-family: sans-serif; }</style>
+    <style>body { font-family: 'Noto Sans Thai', sans-serif; background-color: #f9fafb; }</style>
 </head>
-<body class="bg-gray-100">
+<body>
     <script>const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHg49ZFeI0-dBUZIwKznbIo97V1-F_zqz2LdScYdVzyYEr0aD64d3i4k-lkIESZGDZ9A/exec";</script>
 
-    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-lg p-4">
-        <h1 class="text-xl font-bold mb-4" id="title">ระบบเช็คสต๊อก</h1>
+    <div class="max-w-md mx-auto min-h-screen bg-white shadow-xl p-6">
+        <h1 class="text-2xl font-bold mb-6 text-center text-amber-600">เช็คสต็อกกล้วยเดียวเรือ</h1>
         
-        <div id="shop-buttons" class="grid grid-cols-1 gap-3">
-            <button onclick="loadShop('ก๋วยเตี๋ยวหมู')" class="p-4 bg-orange-500 text-white rounded-lg">ก๋วยเตี๋ยวหมู</button>
-            <button onclick="loadShop('ก๋วยเตี๋ยวไก่')" class="p-4 bg-green-600 text-white rounded-lg">ก๋วยเตี๋ยวไก่</button>
-            <button onclick="loadShop('อาหารตามสั่ง')" class="p-4 bg-red-600 text-white rounded-lg">อาหารตามสั่ง</button>
-            <button onclick="loadShop('อุปกรณ์ในร้าน')" class="p-4 bg-blue-600 text-white rounded-lg">อุปกรณ์ในร้าน</button>
+        <div id="home-view" class="grid grid-cols-2 gap-4">
+            <button onclick="openStock('ก๋วยเตี๋ยวหมู', '#f59e0b')" class="p-6 rounded-2xl text-white font-bold" style="background:#f59e0b">🍜 ก๋วยเตี๋ยวหมู</button>
+            <button onclick="openStock('ก๋วยเตี๋ยวไก่', '#16a34a')" class="p-6 rounded-2xl text-white font-bold" style="background:#16a34a">🍲 ก๋วยเตี๋ยวไก่</button>
+            <button onclick="openStock('อาหารตามสั่ง', '#ea580c')" class="p-6 rounded-2xl text-white font-bold" style="background:#ea580c">🥘 อาหารตามสั่ง</button>
+            <button onclick="openStock('อุปกรณ์ในร้าน', '#2563eb')" class="p-6 rounded-2xl text-white font-bold" style="background:#2563eb">🔧 อุปกรณ์</button>
         </div>
 
-        <div id="stock-page" class="hidden">
-            <button onclick="backToHome()" class="mb-4 text-blue-600">← กลับ</button>
-            <input type="text" id="checker" placeholder="ชื่อผู้บันทึก" class="w-full p-2 border mb-4">
-            <div id="items-container" class="space-y-2"></div>
-            <button onclick="submitStock()" class="w-full mt-6 p-3 bg-blue-500 text-white rounded-lg">บันทึกข้อมูล</button>
-            <div id="status" class="mt-2 text-center"></div>
+        <div id="stock-view" class="hidden">
+            <button onclick="location.reload()" class="mb-4 text-gray-500">← กลับ</button>
+            <input id="staff-name" type="text" placeholder="ชื่อผู้เช็คสต็อก" class="w-full p-3 border rounded-xl mb-4">
+            <div id="items-list" class="space-y-3 mb-6"></div>
+            <button onclick="saveData()" class="w-full py-4 bg-amber-500 text-white font-bold rounded-xl">บันทึกข้อมูล</button>
         </div>
     </div>
 
     <script>
-        let currentShop = "";
-        let itemsData = [];
-
-        async function loadShop(shopName) {
-            currentShop = shopName;
-            document.getElementById('shop-buttons').classList.add('hidden');
-            document.getElementById('stock-page').classList.remove('hidden');
-            
-            const response = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(shopName)}`);
-            const data = await response.json();
-            itemsData = data.slice(1); // ข้ามหัวตาราง
-
-            const container = document.getElementById('items-container');
-            container.innerHTML = itemsData.map((row, index) => `
-                <div class="flex gap-2 items-center border-b pb-2">
-                    <span class="flex-1 text-sm">${row[1]}</span>
-                    <input type="number" class="w-16 p-1 border rounded qty-input" data-index="${index}" placeholder="0">
-                    <span class="w-16 text-xs">${row[2]}</span>
+        async function openStock(sheet, color) {
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('stock-view').classList.remove('hidden');
+            const res = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`);
+            const data = await res.json();
+            const list = document.getElementById('items-list');
+            list.innerHTML = data.slice(1).map((row, i) => `
+                <div class="flex items-center justify-between border-b pb-2">
+                    <span class="text-sm font-medium">${row[1]}</span>
+                    <input type="number" class="w-20 p-2 border rounded-lg qty-input" data-name="${row[1]}" placeholder="0">
                 </div>
             `).join('');
         }
 
-        function backToHome() {
-            document.getElementById('shop-buttons').classList.remove('hidden');
-            document.getElementById('stock-page').classList.add('hidden');
-        }
-
-        async function submitStock() {
-            const checker = document.getElementById('checker').value;
-            if(!checker) { alert('กรุณากรอกชื่อผู้บันทึก'); return; }
-
-            const inputs = document.querySelectorAll('.qty-input');
-            const dataToSubmit = [];
+        async function saveData() {
+            const staff = document.getElementById('staff-name').value;
+            if(!staff) return alert('กรุณากรอกชื่อ');
+            const items = Array.from(document.querySelectorAll('.qty-input')).filter(i => i.value > 0);
             
-            inputs.forEach(input => {
-                if(input.value > 0) {
-                    const idx = input.dataset.index;
-                    const row = itemsData[idx];
-                    dataToSubmit.push({
-                        checked_by: checker,
-                        station: currentShop,
-                        category: row[0],
-                        item_name: row[1],
-                        quantity: input.value,
-                        unit: row[2],
-                        note: row[3] || ""
-                    });
-                }
-            });
-
-            document.getElementById('status').innerText = "กำลังบันทึก...";
-            for(let item of dataToSubmit) {
-                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) });
+            for(let item of items) {
+                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ checked_by: staff, item_name: item.dataset.name, quantity: item.value }) });
             }
-            document.getElementById('status').innerText = "บันทึกสำเร็จ!";
+            alert('บันทึกสำเร็จ!');
+            location.reload();
         }
     </script>
 </body>
