@@ -22,8 +22,15 @@
         <div id="stock-view" class="hidden">
             <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold">← กลับ</button>
             <input id="staff-name" type="text" placeholder="ชื่อผู้เช็ค" class="w-full p-2 border rounded mb-4">
-            <table class="w-full text-xs mb-4">
-                <thead class="bg-gray-100"><tr><th class="p-1">รายการ</th><th class="p-1">จำนวน</th><th class="p-1">หน่วย</th><th class="p-1">โน้ต</th></tr></thead>
+            <table class="w-full text-sm mb-4 border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 text-left">
+                        <th class="p-2 border">รายการ</th>
+                        <th class="p-2 border">จำนวน</th>
+                        <th class="p-2 border">หน่วย</th>
+                        <th class="p-2 border">หมายเหตุ</th>
+                    </tr>
+                </thead>
                 <tbody id="items-list"></tbody>
             </table>
             <button id="save-btn" onclick="saveData()" class="w-full py-3 bg-green-600 text-white rounded-lg font-bold">บันทึกข้อมูล</button>
@@ -32,7 +39,7 @@
         <div id="history-view" class="hidden">
             <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold">← กลับ</button>
             <select id="date-filter" onchange="filterHistory(this.value)" class="w-full p-2 border rounded mb-4"></select>
-            <div id="history-data" class="text-[10px]"></div>
+            <div id="history-data" class="text-xs"></div>
         </div>
     </div>
 
@@ -44,23 +51,26 @@
             const data = await res.json();
             document.getElementById('items-list').innerHTML = data.slice(1).filter(r => r[1]).map((r, i) => `
                 <tr class="border-b">
-                    <td class="p-1">${r[1]}</td>
-                    <td class="p-1 flex items-center gap-1">
-                        <button onclick="adj(this,-0.1)" class="bg-gray-200 px-1">-</button>
-                        <input type="number" class="w-12 text-center qty-input" value="0" step="0.1" data-name="${r[1]}" data-unit="${r[2]}">
-                        <button onclick="adj(this,0.1)" class="bg-gray-200 px-1">+</button>
+                    <td class="p-2">${r[1]}</td>
+                    <td class="p-2 flex items-center gap-1">
+                        <button onclick="adj(this,-0.1)" class="bg-gray-200 px-2 rounded font-bold">-</button>
+                        <input type="number" class="w-16 text-center border qty-input" value="0.0" step="0.1" data-name="${r[1]}" data-unit="${r[2]}">
+                        <button onclick="adj(this,0.1)" class="bg-gray-200 px-2 rounded font-bold">+</button>
                     </td>
-                    <td class="p-1 text-center">${r[2]}</td>
-                    <td class="p-1"><input type="text" class="w-16 border note-input"></td>
+                    <td class="p-2">${r[2]}</td>
+                    <td class="p-2"><input type="text" class="w-full border note-input" placeholder="หมายเหตุ"></td>
                 </tr>
             `).join('');
         }
 
         function adj(btn, val) {
             let input = btn.parentElement.querySelector('.qty-input');
-            let v = Math.max(0, parseFloat(input.value) + val);
-            if (val > 0 && parseFloat(input.value) === 0) v = 1.0;
-            input.value = v.toFixed(1);
+            let v = parseFloat(input.value) || 0;
+            let result = v + val;
+            if (result < 0) result = 0;
+            // เพิ่มเงื่อนไขเริ่มต้นตามที่คุณต้องการ: ถ้าเป็น 0 แล้วกด + ให้เด้งเป็น 1.0
+            if (val > 0 && v === 0) result = 1.0;
+            input.value = result.toFixed(1);
         }
 
         async function saveData() {
@@ -80,23 +90,6 @@
                 }
             }
             alert('บันทึกสำเร็จ!'); location.reload();
-        }
-
-        async function showHistory() {
-            document.getElementById('home-view').classList.add('hidden');
-            document.getElementById('history-view').classList.remove('hidden');
-            const res = await fetch(`${SCRIPT_URL}?sheet=บันทึกสต๊อก`);
-            const data = await res.json();
-            const dates = [...new Set(data.slice(1).map(r => r[0].split('T')[0]))].reverse();
-            document.getElementById('date-filter').innerHTML = `<option>เลือกวันที่</option>` + dates.map(d => `<option value="${d}">${d}</option>`).join('');
-            window.histData = data.slice(1);
-        }
-
-        function filterHistory(date) {
-            const filtered = window.histData.filter(r => r[0].startsWith(date));
-            document.getElementById('history-data').innerHTML = `<table class="w-full border">` + filtered.map(r => 
-                `<tr><td class="border p-1">${r[4]}</td><td class="border p-1">${r[5]}</td><td class="border p-1">${r[6]}</td></tr>`
-            ).join('') + `</table>`;
         }
     </script>
 </body>
