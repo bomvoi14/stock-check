@@ -44,8 +44,19 @@
         <!-- หน้าประวัติย้อนหลัง -->
         <div id="history-view" class="hidden">
             <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold border px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">← กลับหน้าเมนู</button>
-            <h3 class="font-bold text-lg mb-2 text-center text-gray-700">เลือกวันที่เพื่อดูประวัติ</h3>
-            <input type="date" id="date-picker" onchange="filterHistory(this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg mb-4 text-center font-bold">
+            <h3 class="font-bold text-lg mb-2 text-center text-gray-700">ค้นหาประวัติย้อนหลัง</h3>
+            
+            <!-- ส่วนของตัวกรอง -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+                <input type="date" id="date-picker" onchange="filterHistory()" class="w-full p-3 border-2 border-gray-300 rounded-lg text-center font-bold">
+                <select id="shop-filter" onchange="filterHistory()" class="w-full p-3 border-2 border-gray-300 rounded-lg text-center font-bold">
+                    <option value="">-- ทุกร้าน --</option>
+                </select>
+                <select id="staff-filter" onchange="filterHistory()" class="w-full p-3 border-2 border-gray-300 rounded-lg text-center font-bold">
+                    <option value="">-- ผู้เช็คทุกคน --</option>
+                </select>
+            </div>
+            
             <div id="history-data" class="text-sm mt-4"></div>
         </div>
     </div>
@@ -72,8 +83,8 @@
                                 <!-- ปุ่มนอก (ปรับหลักทีละ 1) -->
                                 <button onclick="adj(this, -1)" class="w-8 h-8 bg-red-100 text-red-600 rounded font-bold hover:bg-red-200 border border-red-300">-</button>
                                 
-                                <!-- ช่อง Input (ลูกศรปรับย่อยทีละ 0.1) -->
-                                <input type="number" class="w-20 h-10 text-center border-2 border-gray-300 rounded font-bold text-lg qty-input focus:border-blue-500 focus:outline-none" value="0.0" step="0.1" data-name="${r[1]}" data-unit="${r[2]}">
+                                <!-- ช่อง Input (ลูกศรปรับย่อยทีละ 0.1) เพิ่ม min="0" กันติดลบ -->
+                                <input type="number" min="0" oninput="if(this.value < 0) this.value = 0;" class="w-20 h-10 text-center border-2 border-gray-300 rounded font-bold text-lg qty-input focus:border-blue-500 focus:outline-none" value="0.0" step="0.1" data-name="${r[1]}" data-unit="${r[2]}">
                                 
                                 <!-- ปุ่มนอก (ปรับหลักทีละ 1) -->
                                 <button onclick="adj(this, 1)" class="w-8 h-8 bg-green-100 text-green-600 rounded font-bold hover:bg-green-200 border border-green-300">+</button>
@@ -163,47 +174,76 @@
             try {
                 const res = await fetch(`${SCRIPT_URL}?sheet=บันทึกสต๊อก`);
                 window.histData = await res.json();
-                document.getElementById('history-data').innerHTML = '<p class="text-center p-4 text-blue-500">โหลดข้อมูลสำเร็จ กรุณาเลือกวันที่ด้านบนเพื่อดูรายการ</p>';
+                
+                // ดึงข้อมูลร้านและพนักงานแบบไม่ซ้ำ เพื่อสร้างตัวเลือกใน Dropdown
+                const shops = [...new Set(window.histData.slice(1).map(r => r[2]).filter(Boolean))];
+                const staffs = [...new Set(window.histData.slice(1).map(r => r[1]).filter(Boolean))];
+                
+                document.getElementById('shop-filter').innerHTML = '<option value="">-- ทุกร้าน --</option>' + shops.map(s => `<option value="${s}">${s}</option>`).join('');
+                document.getElementById('staff-filter').innerHTML = '<option value="">-- ผู้เช็คทุกคน --</option>' + staffs.map(s => `<option value="${s}">${s}</option>`).join('');
+                
+                document.getElementById('history-data').innerHTML = '<p class="text-center p-4 text-blue-500">โหลดข้อมูลสำเร็จ กรุณาเลือกเงื่อนไขด้านบนเพื่อดูรายการ</p>';
             } catch (error) {
                 document.getElementById('history-data').innerHTML = '<p class="text-center p-4 text-red-500">ดึงประวัติล้มเหลว ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</p>';
             }
         }
 
-        // ฟังก์ชันกรองประวัติตามวันที่ (แก้ปัญหาค้นหาไม่เจอ)
-        function filterHistory(date) {
+        // ฟังก์ชันกรองประวัติที่ใช้เงื่อนไขได้หลายอันพร้อมกัน
+        function filterHistory() {
             if (!window.histData || window.histData.length === 0) return;
             
-            const [y, m, d] = date.split('-');
-            const yThai = parseInt(y) + 543; // เผื่อกรณี Google Sheet เก็บเป็นปี พ.ศ.
+            const dateVal = document.getElementById('date-picker').value;
+            const shopVal = document.getElementById('shop-filter').value;
+            const staffVal = document.getElementById('staff-filter').value;
             
-            // ทำให้หาเจอแน่ๆ ไม่ว่า Sheet จะ Format วันที่มาแบบไหน
-            const dateVariations = [ date, `${d}/${m}/${y}`, `${m}/${d}/${y}`, `${d}/${m}/${yThai}` ];
+            let filtered = window.histData.slice(1);
 
-            const filtered = window.histData.slice(1).filter(r => {
-                if (!r[0]) return false;
-                const rowDate = String(r[0]);
-                return dateVariations.some(format => rowDate.includes(format));
-            });
+            // 1. กรองด้วยวันที่ (ถ้ามีการเลือก)
+            if (dateVal) {
+                const [y, m, d] = dateVal.split('-');
+                const yThai = parseInt(y) + 543;
+                const dateVariations = [ dateVal, `${d}/${m}/${y}`, `${m}/${d}/${y}`, `${d}/${m}/${yThai}` ];
 
+                filtered = filtered.filter(r => {
+                    if (!r[0]) return false;
+                    const rowDate = String(r[0]);
+                    return dateVariations.some(format => rowDate.includes(format));
+                });
+            }
+
+            // 2. กรองด้วยร้าน (ถ้ามีการเลือก)
+            if (shopVal) {
+                filtered = filtered.filter(r => r[2] === shopVal);
+            }
+
+            // 3. กรองด้วยชื่อผู้เช็ค (ถ้ามีการเลือก)
+            if (staffVal) {
+                filtered = filtered.filter(r => r[1] === staffVal);
+            }
+
+            // แสดงผลลัพธ์
             if (filtered.length > 0) {
                 document.getElementById('history-data').innerHTML = `
                     <div class="overflow-x-auto mt-2">
                         <table class="w-full text-sm border-collapse border border-gray-300">
                             <thead>
                                 <tr class="bg-gray-200">
-                                    <th class="border border-gray-300 p-2">ผู้บันทึก</th>
+                                    <th class="border border-gray-300 p-2 text-center w-1/4">ร้าน</th>
+                                    <th class="border border-gray-300 p-2 text-center w-1/4">ผู้บันทึก</th>
                                     <th class="border border-gray-300 p-2 text-left">รายการ</th>
                                     <th class="border border-gray-300 p-2 text-center">จำนวน</th>
-                                    <th class="border border-gray-300 p-2">โน้ต</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${filtered.reverse().map(r => `
                                     <tr class="hover:bg-gray-50 border-b">
+                                        <td class="border border-gray-300 p-2 text-center font-medium">${r[2] || '-'}</td>
                                         <td class="border border-gray-300 p-2 text-center">${r[1] || '-'}</td>
-                                        <td class="border border-gray-300 p-2 font-medium">${r[4] || r[2] || '-'}</td>
+                                        <td class="border border-gray-300 p-2">
+                                            <div class="font-medium">${r[4] || r[2] || '-'}</div>
+                                            <div class="text-[10px] text-gray-500">${r[7] || r[5] || ''}</div>
+                                        </td>
                                         <td class="border border-gray-300 p-2 text-center font-bold text-blue-600">${r[5] || r[3] || '0'} ${r[6] || r[4] || ''}</td>
-                                        <td class="border border-gray-300 p-2 text-xs text-gray-500">${r[7] || r[5] || '-'}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -212,7 +252,7 @@
             } else {
                 document.getElementById('history-data').innerHTML = `
                     <div class="bg-red-50 border border-red-200 rounded p-4 text-center mt-2">
-                        <p class="text-red-500 font-bold">ไม่พบรายการบันทึกสต๊อกในวันที่ ${d}/${m}/${y}</p>
+                        <p class="text-red-500 font-bold">ไม่พบรายการบันทึกตามเงื่อนไขที่เลือก</p>
                     </div>`;
             }
         }
