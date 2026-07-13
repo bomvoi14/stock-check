@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบเช็คสต๊อก</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <style>body { font-family: sans-serif; }</style>
+</head>
+<body class="bg-gray-100">
+    <script>const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHg49ZFeI0-dBUZIwKznbIo97V1-F_zqz2LdScYdVzyYEr0aD64d3i4k-lkIESZGDZ9A/exec";</script>
+
+    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-lg p-4">
+        <h1 class="text-xl font-bold mb-4" id="title">ระบบเช็คสต๊อก</h1>
+        
+        <div id="shop-buttons" class="grid grid-cols-1 gap-3">
+            <button onclick="loadShop('ก๋วยเตี๋ยวหมู')" class="p-4 bg-orange-500 text-white rounded-lg">ก๋วยเตี๋ยวหมู</button>
+            <button onclick="loadShop('ก๋วยเตี๋ยวไก่')" class="p-4 bg-green-600 text-white rounded-lg">ก๋วยเตี๋ยวไก่</button>
+            <button onclick="loadShop('อาหารตามสั่ง')" class="p-4 bg-red-600 text-white rounded-lg">อาหารตามสั่ง</button>
+            <button onclick="loadShop('อุปกรณ์ในร้าน')" class="p-4 bg-blue-600 text-white rounded-lg">อุปกรณ์ในร้าน</button>
+        </div>
+
+        <div id="stock-page" class="hidden">
+            <button onclick="backToHome()" class="mb-4 text-blue-600">← กลับ</button>
+            <input type="text" id="checker" placeholder="ชื่อผู้บันทึก" class="w-full p-2 border mb-4">
+            <div id="items-container" class="space-y-2"></div>
+            <button onclick="submitStock()" class="w-full mt-6 p-3 bg-blue-500 text-white rounded-lg">บันทึกข้อมูล</button>
+            <div id="status" class="mt-2 text-center"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentShop = "";
+        let itemsData = [];
+
+        async function loadShop(shopName) {
+            currentShop = shopName;
+            document.getElementById('shop-buttons').classList.add('hidden');
+            document.getElementById('stock-page').classList.remove('hidden');
+            
+            const response = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(shopName)}`);
+            const data = await response.json();
+            itemsData = data.slice(1); // ข้ามหัวตาราง
+
+            const container = document.getElementById('items-container');
+            container.innerHTML = itemsData.map((row, index) => `
+                <div class="flex gap-2 items-center border-b pb-2">
+                    <span class="flex-1 text-sm">${row[1]}</span>
+                    <input type="number" class="w-16 p-1 border rounded qty-input" data-index="${index}" placeholder="0">
+                    <span class="w-16 text-xs">${row[2]}</span>
+                </div>
+            `).join('');
+        }
+
+        function backToHome() {
+            document.getElementById('shop-buttons').classList.remove('hidden');
+            document.getElementById('stock-page').classList.add('hidden');
+        }
+
+        async function submitStock() {
+            const checker = document.getElementById('checker').value;
+            if(!checker) { alert('กรุณากรอกชื่อผู้บันทึก'); return; }
+
+            const inputs = document.querySelectorAll('.qty-input');
+            const dataToSubmit = [];
+            
+            inputs.forEach(input => {
+                if(input.value > 0) {
+                    const idx = input.dataset.index;
+                    const row = itemsData[idx];
+                    dataToSubmit.push({
+                        checked_by: checker,
+                        station: currentShop,
+                        category: row[0],
+                        item_name: row[1],
+                        quantity: input.value,
+                        unit: row[2],
+                        note: row[3] || ""
+                    });
+                }
+            });
+
+            document.getElementById('status').innerText = "กำลังบันทึก...";
+            for(let item of dataToSubmit) {
+                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) });
+            }
+            document.getElementById('status').innerText = "บันทึกสำเร็จ!";
+        }
+    </script>
+</body>
+</html>
