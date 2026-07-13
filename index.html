@@ -10,24 +10,29 @@
     <script>const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHg49ZFeI0-dBUZIwKznbIo97V1-F_zqz2LdScYdVzyYEr0aD64d3i4k-lkIESZGDZ9A/exec";</script>
 
     <div class="max-w-2xl mx-auto bg-white p-4 shadow-lg rounded-xl">
-        <div id="home-view" class="space-y-4">
-            <button onclick="openStock('ก๋วยเตี๋ยวหมู')" class="w-full p-4 bg-orange-500 text-white rounded-lg font-bold">ก๋วยเตี๋ยวหมู</button>
-            <button onclick="openStock('ก๋วยเตี๋ยวไก่')" class="w-full p-4 bg-green-600 text-white rounded-lg font-bold">ก๋วยเตี๋ยวไก่</button>
-            <button onclick="openStock('อาหารตามสั่ง')" class="w-full p-4 bg-red-600 text-white rounded-lg font-bold">อาหารตามสั่ง</button>
-            <button onclick="openStock('อุปกรณ์ในร้าน')" class="w-full p-4 bg-blue-600 text-white rounded-lg font-bold">อุปกรณ์ในร้าน</button>
-            <button onclick="showHistory()" class="w-full p-4 bg-gray-500 text-white rounded-lg font-bold">ดูประวัติย้อนหลัง</button>
+        <div id="home-view" class="space-y-3">
+            <h2 class="font-bold text-center mb-4">เมนูเช็คสต็อก</h2>
+            <button onclick="openStock('ก๋วยเตี๋ยวหมู')" class="w-full p-3 bg-orange-500 text-white rounded-lg">🍜 ก๋วยเตี๋ยวหมู</button>
+            <button onclick="openStock('ก๋วยเตี๋ยวไก่')" class="w-full p-3 bg-green-600 text-white rounded-lg">🍲 ก๋วยเตี๋ยวไก่</button>
+            <button onclick="openStock('อาหารตามสั่ง')" class="w-full p-3 bg-red-600 text-white rounded-lg">🥘 อาหารตามสั่ง</button>
+            <button onclick="openStock('อุปกรณ์ในร้าน')" class="w-full p-3 bg-blue-600 text-white rounded-lg">🔧 อุปกรณ์ในร้าน</button>
+            <button onclick="showHistory()" class="w-full p-3 bg-gray-600 text-white rounded-lg">📅 ดูประวัติย้อนหลัง</button>
         </div>
 
         <div id="stock-view" class="hidden">
-            <button onclick="location.reload()" class="mb-4 text-blue-500">← กลับ</button>
+            <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold">← กลับ</button>
             <input id="staff-name" type="text" placeholder="ชื่อผู้เช็ค" class="w-full p-2 border rounded mb-4">
-            <div id="items-list" class="space-y-3 mb-6"></div>
-            <button id="save-btn" onclick="saveData()" class="w-full py-4 bg-green-600 text-white font-bold rounded-lg">บันทึกข้อมูล</button>
+            <table class="w-full text-xs mb-4">
+                <thead class="bg-gray-100"><tr><th class="p-1">รายการ</th><th class="p-1">จำนวน</th><th class="p-1">หน่วย</th><th class="p-1">โน้ต</th></tr></thead>
+                <tbody id="items-list"></tbody>
+            </table>
+            <button id="save-btn" onclick="saveData()" class="w-full py-3 bg-green-600 text-white rounded-lg font-bold">บันทึกข้อมูล</button>
         </div>
 
         <div id="history-view" class="hidden">
-            <button onclick="location.reload()" class="mb-4 text-blue-500">← กลับ</button>
-            <div id="history-data" class="text-sm"></div>
+            <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold">← กลับ</button>
+            <select id="date-filter" onchange="filterHistory(this.value)" class="w-full p-2 border rounded mb-4"></select>
+            <div id="history-data" class="text-[10px]"></div>
         </div>
     </div>
 
@@ -37,31 +42,44 @@
             document.getElementById('stock-view').classList.remove('hidden');
             const res = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`);
             const data = await res.json();
-            const list = document.getElementById('items-list');
-            list.innerHTML = data.slice(1).filter(row => row[1]).map((row, i) => `
-                <div class="flex items-center gap-2 border-b pb-2">
-                    <span class="flex-1 text-xs">${row[1]}</span>
-                    <button onclick="adjust(this, -0.1)" class="bg-gray-200 px-2 rounded">-</button>
-                    <input type="number" class="w-16 text-center border qty-input" value="0" step="0.1">
-                    <button onclick="adjust(this, 0.1)" class="bg-gray-200 px-2 rounded">+</button>
-                    <span class="w-12 text-xs">${row[2] || ''}</span>
-                </div>
+            document.getElementById('items-list').innerHTML = data.slice(1).filter(r => r[1]).map((r, i) => `
+                <tr class="border-b">
+                    <td class="p-1">${r[1]}</td>
+                    <td class="p-1 flex items-center gap-1">
+                        <button onclick="adj(this,-0.1)" class="bg-gray-200 px-1">-</button>
+                        <input type="number" class="w-12 text-center qty-input" value="0" step="0.1" data-name="${r[1]}" data-unit="${r[2]}">
+                        <button onclick="adj(this,0.1)" class="bg-gray-200 px-1">+</button>
+                    </td>
+                    <td class="p-1 text-center">${r[2]}</td>
+                    <td class="p-1"><input type="text" class="w-16 border note-input"></td>
+                </tr>
             `).join('');
         }
 
-        function adjust(btn, val) {
+        function adj(btn, val) {
             let input = btn.parentElement.querySelector('.qty-input');
-            let v = parseFloat(input.value) || 0;
-            if (val > 0 && v === 0) v = 0.9; // เริ่มต้นที่ 0.9 + 0.1 = 1
-            input.value = (Math.round((v + val) * 10) / 10).toFixed(1);
+            let v = Math.max(0, parseFloat(input.value) + val);
+            if (val > 0 && parseFloat(input.value) === 0) v = 1.0;
+            input.value = v.toFixed(1);
         }
 
         async function saveData() {
-            const btn = document.getElementById('save-btn');
-            btn.disabled = true; btn.innerText = "กำลังบันทึก...";
-            // (โค้ดส่งข้อมูล...เหมือนเดิม)
-            alert('บันทึกสำเร็จ!');
-            location.reload();
+            const staff = document.getElementById('staff-name').value;
+            if(!staff) return alert('กรุณากรอกชื่อ');
+            document.getElementById('save-btn').disabled = true;
+            document.getElementById('save-btn').innerText = "กำลังบันทึก...";
+            
+            const rows = document.querySelectorAll('#items-list tr');
+            for(let r of rows) {
+                let q = r.querySelector('.qty-input').value;
+                if(q > 0) {
+                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ 
+                        checked_by: staff, item_name: r.querySelector('.qty-input').dataset.name, 
+                        quantity: q, unit: r.querySelector('.qty-input').dataset.unit, note: r.querySelector('.note-input').value 
+                    })});
+                }
+            }
+            alert('บันทึกสำเร็จ!'); location.reload();
         }
 
         async function showHistory() {
@@ -69,7 +87,16 @@
             document.getElementById('history-view').classList.remove('hidden');
             const res = await fetch(`${SCRIPT_URL}?sheet=บันทึกสต๊อก`);
             const data = await res.json();
-            document.getElementById('history-data').innerHTML = data.slice(-10).map(r => `<div>${r[0]} | ${r[2]} | ${r[4]} (${r[5]}${r[6]})</div>`).join('');
+            const dates = [...new Set(data.slice(1).map(r => r[0].split('T')[0]))].reverse();
+            document.getElementById('date-filter').innerHTML = `<option>เลือกวันที่</option>` + dates.map(d => `<option value="${d}">${d}</option>`).join('');
+            window.histData = data.slice(1);
+        }
+
+        function filterHistory(date) {
+            const filtered = window.histData.filter(r => r[0].startsWith(date));
+            document.getElementById('history-data').innerHTML = `<table class="w-full border">` + filtered.map(r => 
+                `<tr><td class="border p-1">${r[4]}</td><td class="border p-1">${r[5]}</td><td class="border p-1">${r[6]}</td></tr>`
+            ).join('') + `</table>`;
         }
     </script>
 </body>
