@@ -1,5 +1,82 @@
-<script>
-        // --- 1. ระบบพจนานุกรมแปลภาษา (UI Translation Dictionary) ---
+<!doctype html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เช็คสต็อกร้านชามโปรด</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700&display=swap');
+        body { font-family: 'Noto Sans Thai', sans-serif; background-color: #fdf6e3; }
+        input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <script>const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHg49ZFeI0-dBUZIwKznbIo97V1-F_zqz2LdScYdVzyYEr0aD64d3i4k-lkIESZGDZ9A/exec";</script>
+
+    <div class="max-w-3xl mx-auto bg-white p-6 shadow-2xl rounded-2xl border-t-8 border-amber-500">
+        
+        <!-- แถบเลือกภาษา -->
+        <div class="flex justify-end gap-2 mb-6 border-b pb-4">
+            <button onclick="setLang('th')" class="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all shadow-sm focus:ring-2 focus:ring-amber-200">TH ไทย</button>
+            <button onclick="setLang('la')" class="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all shadow-sm focus:ring-2 focus:ring-amber-200">LA ລາວ</button>
+            <button onclick="setLang('mm')" class="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all shadow-sm focus:ring-2 focus:ring-amber-200">MM မြန်မာ</button>
+        </div>
+
+        <!-- เมนูหลัก -->
+        <div id="home-view" class="space-y-4">
+            <h2 data-i18n="title" class="font-bold text-center mb-6 text-2xl text-amber-600">เช็คสต็อกร้านชามโปรด</h2>
+            <button onclick="openStock('ก๋วยเตี๋ยวหมู')" class="w-full p-5 bg-amber-500 text-white rounded-xl font-bold text-xl shadow-md hover:bg-amber-600 transform hover:scale-[1.02] transition-all flex items-center gap-3">🍜 <span data-i18n="menu1">ก๋วยเตี๋ยวหมู</span></button>
+            <button onclick="openStock('ก๋วยเตี๋ยวไก่')" class="w-full p-5 bg-green-600 text-white rounded-xl font-bold text-xl shadow-md hover:bg-green-700 transform hover:scale-[1.02] transition-all flex items-center gap-3">🍲 <span data-i18n="menu2">ก๋วยเตี๋ยวไก่</span></button>
+            <button onclick="openStock('อาหารตามสั่ง')" class="w-full p-5 bg-orange-600 text-white rounded-xl font-bold text-xl shadow-md hover:bg-orange-700 transform hover:scale-[1.02] transition-all flex items-center gap-3">🥘 <span data-i18n="menu3">อาหารตามสั่ง</span></button>
+            <button onclick="openStock('อุปกรณ์ในร้าน')" class="w-full p-5 bg-blue-600 text-white rounded-xl font-bold text-xl shadow-md hover:bg-blue-700 transform hover:scale-[1.02] transition-all flex items-center gap-3">🔧 <span data-i18n="menu4">อุปกรณ์ในร้าน</span></button>
+            
+            <div class="pt-4 border-t mt-6">
+                <button onclick="showHistory()" class="w-full p-4 bg-amber-100 text-amber-800 rounded-xl font-bold text-lg hover:bg-amber-200 transition-all flex items-center justify-center gap-2">🕒 <span data-i18n="historyBtn">ดูประวัติย้อนหลัง</span></button>
+            </div>
+        </div>
+
+        <!-- หน้าเช็คสต็อก -->
+        <div id="stock-view" class="hidden">
+            <button onclick="location.reload()" class="mb-6 text-amber-600 font-bold flex items-center gap-2 hover:text-amber-800">← <span data-i18n="back">กลับหน้าเมนู</span></button>
+            <input id="staff-name" type="text" data-i18n-ph="staffPlaceholder" placeholder="กรุณากรอกชื่อผู้เช็คสต็อก" class="w-full p-4 border-2 border-amber-300 rounded-xl mb-6 font-bold text-center text-lg focus:ring-4 focus:ring-amber-100 outline-none">
+            
+            <div class="overflow-x-auto bg-amber-50/30 rounded-xl p-2 border border-gray-100">
+                <table class="w-full text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-amber-100 text-amber-900 rounded-t-xl">
+                            <th data-i18n="colItem" class="p-3 text-left w-1/3 rounded-tl-lg font-bold">รายการ</th>
+                            <th data-i18n="colQty" class="p-3 text-center font-bold">จำนวน</th>
+                            <th data-i18n="colUnit" class="p-3 text-center w-1/6 font-bold">หน่วย</th>
+                            <th data-i18n="colNote" class="p-3 text-left w-1/4 rounded-tr-lg font-bold">หมายเหตุ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-list"></tbody>
+                </table>
+            </div>
+            <button id="save-btn" onclick="saveData()" class="w-full py-4 mt-6 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-xl shadow-lg transition-all flex justify-center items-center gap-2"><span data-i18n="saveBtn">บันทึกข้อมูล</span></button>
+        </div>
+
+        <!-- หน้าประวัติย้อนหลัง -->
+        <div id="history-view" class="hidden">
+            <button onclick="location.reload()" class="mb-6 text-amber-600 font-bold flex items-center gap-2 hover:text-amber-800">← <span data-i18n="back">กลับหน้าเมนู</span></button>
+            <h3 data-i18n="searchTitle" class="font-bold text-xl mb-4 text-center text-amber-800">ค้นหาประวัติย้อนหลัง</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 bg-gray-50 p-4 rounded-xl border">
+                <input type="date" id="date-picker" onchange="filterHistory()" class="w-full p-3 border rounded-lg text-center font-medium focus:border-amber-400 outline-none">
+                <select id="shop-filter" onchange="filterHistory()" class="w-full p-3 border rounded-lg text-center font-medium focus:border-amber-400 outline-none">
+                    <option value="" data-i18n="allShops">-- ทุกร้าน --</option>
+                </select>
+                <select id="staff-filter" onchange="filterHistory()" class="w-full p-3 border rounded-lg text-center font-medium focus:border-amber-400 outline-none">
+                    <option value="" data-i18n="allStaff">-- ผู้เช็คทุกคน --</option>
+                </select>
+            </div>
+            
+            <div id="history-data" class="text-sm mt-4"></div>
+        </div>
+    </div>
+
+    <script>
         const i18n = {
             th: {
                 title: "เช็คสต็อกร้านชามโปรด", menu1: "ก๋วยเตี๋ยวหมู", menu2: "ก๋วยเตี๋ยวไก่", menu3: "อาหารตามสั่ง", menu4: "อุปกรณ์ในร้าน",
@@ -28,7 +105,6 @@
         let unitTranslations = {}; 
         let isUnitLoaded = false;
 
-        // แก้ไข: โหลดข้อมูลแปลภาษาแบบเช็คสถานะ
         async function getUnitTranslations() {
             if (isUnitLoaded) return;
             try {
@@ -38,8 +114,8 @@
                     if (row[0]) {
                         unitTranslations[row[0]] = {
                             th: row[0],
-                            la: row[2] || row[0], // คอลัมน์ C 
-                            mm: row[3] || row[0]  // คอลัมน์ D 
+                            la: row[2] || row[0],
+                            mm: row[3] || row[0]
                         };
                     }
                 });
@@ -49,12 +125,10 @@
             }
         }
         
-        // เรียกให้โหลดล่วงหน้าไว้ก่อน
         getUnitTranslations();
 
         function setLang(lang) {
             currentLang = lang;
-            
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (i18n[lang][key]) el.innerText = i18n[lang][key];
@@ -63,12 +137,9 @@
                 const key = el.getAttribute('data-i18n-ph');
                 if (i18n[lang][key]) el.setAttribute('placeholder', i18n[lang][key]);
             });
-            
-            // อัปเดตภาษาสำหรับรายการวัตถุดิบและหน่วยที่ถูกสร้างไว้แล้ว
             document.querySelectorAll('.dyn-text').forEach(el => {
                 el.innerText = el.getAttribute('data-' + lang) || el.getAttribute('data-th');
             });
-            
             if(!document.getElementById('history-view').classList.contains('hidden')){
                 filterHistory();
             }
@@ -83,14 +154,13 @@
             document.getElementById('items-list').innerHTML = `<tr><td colspan="4" class="text-center p-8 text-gray-400 font-bold text-lg"><span class="animate-pulse">${i18n[currentLang].loading}</span></td></tr>`;
             
             try {
-                // บังคับให้รอโหลดคำแปลหน่วยให้เสร็จก่อน
-                await getUnitTranslations();
+                await getUnitTranslations(); // บังคับรอโหลดคำแปลจนเสร็จ ค่อยสร้างตาราง
                 
                 const res = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`);
                 const data = await res.json();
                 
                 document.getElementById('items-list').innerHTML = data.slice(1).filter(r => r[1] && String(r[1]).trim() !== '').map((r, i) => {
-                    const item = { th: r[1], la: r[4] || r[1], mm: r[5] || r[1] }; // E = ลาว, F = พม่า
+                    const item = { th: r[1], la: r[4] || r[1], mm: r[5] || r[1] };
                     const unitTh = r[2] || '';
                     const unit = {
                         th: unitTh,
@@ -153,9 +223,7 @@
                         dataToSubmit.push({ 
                             checked_by: staff, station: currentShop, category: "", 
                             item_name: qtyInput.dataset.name, 
-                            quantity: q, 
-                            unit: qtyInput.dataset.unit, 
-                            note: r.querySelector('.note-input').value 
+                            quantity: q, unit: qtyInput.dataset.unit, note: r.querySelector('.note-input').value 
                         });
                     }
                 }
@@ -189,7 +257,7 @@
             document.getElementById('history-data').innerHTML = `<p class="text-center p-8 text-gray-400 font-bold"><span class="animate-pulse">${i18n[currentLang].loading}</span></p>`;
             
             try {
-                await getUnitTranslations(); // บังคับรอโหลดคำแปลเผื่อไว้
+                await getUnitTranslations();
                 const res = await fetch(`${SCRIPT_URL}?sheet=บันทึกสต๊อก`);
                 window.histData = await res.json();
                 
@@ -265,3 +333,5 @@
         
         setLang('th');
     </script>
+</body>
+</html>
