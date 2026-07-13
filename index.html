@@ -10,7 +10,6 @@
         body { font-family: 'Noto Sans Thai', sans-serif; background-color: #fdf6e3; }
         input[type=number]::-webkit-inner-spin-button { opacity: 1; }
     </style>
-    
 </head>
 <body class="p-4 md:p-8">
     <script>const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHg49ZFeI0-dBUZIwKznbIo97V1-F_zqz2LdScYdVzyYEr0aD64d3i4k-lkIESZGDZ9A/exec";</script>
@@ -111,12 +110,18 @@
             try {
                 const res = await fetch(`${SCRIPT_URL}?sheet=Translation`);
                 const data = await res.json();
+                
+                // แก้ไข: ดึงคีย์ภาษาไทยจากคอลัมน์ B (index 1) เป็นหลัก
                 data.slice(1).forEach(row => {
-                    if (row[0]) {
-                        unitTranslations[row[0]] = {
-                            th: row[0],
-                            la: row[2] || row[0],
-                            mm: row[3] || row[0]
+                    const thKey = row[1] ? String(row[1]).trim() : ''; // คอลัมน์ B (ไทย)
+                    const laTrans = row[2] ? String(row[2]).trim() : ''; // คอลัมน์ C (ลาว)
+                    const mmTrans = row[3] ? String(row[3]).trim() : ''; // คอลัมน์ D (พม่า)
+                    
+                    if (thKey) {
+                        unitTranslations[thKey] = { 
+                            th: thKey, 
+                            la: laTrans || thKey, 
+                            mm: mmTrans || thKey 
                         };
                     }
                 });
@@ -161,8 +166,10 @@
                 const data = await res.json();
                 
                 document.getElementById('items-list').innerHTML = data.slice(1).filter(r => r[1] && String(r[1]).trim() !== '').map((r, i) => {
-                    const item = { th: r[1], la: r[4] || r[1], mm: r[5] || r[1] };
-                    const unitTh = r[2] || '';
+                    const item = { th: String(r[1]).trim(), la: r[4] ? String(r[4]).trim() : String(r[1]).trim(), mm: r[5] ? String(r[5]).trim() : String(r[1]).trim() };
+                    
+                    // ตัดช่องว่างออกจากหน่วยภาษาไทยก่อนค้นหาคำแปล
+                    const unitTh = r[2] ? String(r[2]).trim() : '';
                     const unit = {
                         th: unitTh,
                         la: unitTranslations[unitTh] ? unitTranslations[unitTh].la : unitTh,
@@ -307,7 +314,7 @@
                             <tbody>
                                 ${filtered.reverse().map((r, index) => {
                                     const itemTh = r[4] || r[2] || '-';
-                                    const unitTh = r[6] || r[4] || '';
+                                    const unitTh = r[6] ? String(r[6]).trim() : (r[4] ? String(r[4]).trim() : '');
                                     const uLa = unitTranslations[unitTh] ? unitTranslations[unitTh].la : unitTh;
                                     const uMm = unitTranslations[unitTh] ? unitTranslations[unitTh].mm : unitTh;
                                     return `
