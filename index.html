@@ -12,33 +12,26 @@
     <div class="max-w-2xl mx-auto bg-white p-4 shadow-lg rounded-xl">
         <div id="home-view" class="space-y-3">
             <h2 class="font-bold text-center mb-4">เมนูเช็คสต็อก</h2>
-            <button onclick="openStock('ก๋วยเตี๋ยวหมู')" class="w-full p-3 bg-orange-500 text-white rounded-lg">🍜 ก๋วยเตี๋ยวหมู</button>
-            <button onclick="openStock('ก๋วยเตี๋ยวไก่')" class="w-full p-3 bg-green-600 text-white rounded-lg">🍲 ก๋วยเตี๋ยวไก่</button>
-            <button onclick="openStock('อาหารตามสั่ง')" class="w-full p-3 bg-red-600 text-white rounded-lg">🥘 อาหารตามสั่ง</button>
-            <button onclick="openStock('อุปกรณ์ในร้าน')" class="w-full p-3 bg-blue-600 text-white rounded-lg">🔧 อุปกรณ์ในร้าน</button>
-            <button onclick="showHistory()" class="w-full p-3 bg-gray-600 text-white rounded-lg">📅 ดูประวัติย้อนหลัง</button>
+            <button onclick="openStock('ก๋วยเตี๋ยวหมู')" class="w-full p-3 bg-orange-500 text-white rounded-lg font-bold">🍜 ก๋วยเตี๋ยวหมู</button>
+            <button onclick="openStock('ก๋วยเตี๋ยวไก่')" class="w-full p-3 bg-green-600 text-white rounded-lg font-bold">🍲 ก๋วยเตี๋ยวไก่</button>
+            <button onclick="openStock('อาหารตามสั่ง')" class="w-full p-3 bg-red-600 text-white rounded-lg font-bold">🥘 อาหารตามสั่ง</button>
+            <button onclick="openStock('อุปกรณ์ในร้าน')" class="w-full p-3 bg-blue-600 text-white rounded-lg font-bold">🔧 อุปกรณ์ในร้าน</button>
+            <button onclick="showHistory()" class="w-full p-3 bg-gray-600 text-white rounded-lg font-bold">📅 ดูประวัติย้อนหลัง</button>
         </div>
 
         <div id="stock-view" class="hidden">
             <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold">← กลับ</button>
             <input id="staff-name" type="text" placeholder="ชื่อผู้เช็ค" class="w-full p-2 border rounded mb-4">
-            <table class="w-full text-sm mb-4 border-collapse">
-                <thead>
-                    <tr class="bg-gray-100 text-left">
-                        <th class="p-2 border">รายการ</th>
-                        <th class="p-2 border">จำนวน</th>
-                        <th class="p-2 border">หน่วย</th>
-                        <th class="p-2 border">หมายเหตุ</th>
-                    </tr>
-                </thead>
+            <table class="w-full text-sm border-collapse border">
+                <thead><tr class="bg-gray-100"><th class="border p-2">รายการ</th><th class="border p-2">จำนวน</th><th class="border p-2">หน่วย</th><th class="border p-2">หมายเหตุ</th></tr></thead>
                 <tbody id="items-list"></tbody>
             </table>
-            <button id="save-btn" onclick="saveData()" class="w-full py-3 bg-green-600 text-white rounded-lg font-bold">บันทึกข้อมูล</button>
+            <button id="save-btn" onclick="saveData()" class="w-full py-3 mt-4 bg-green-600 text-white rounded-lg font-bold">บันทึกข้อมูล</button>
         </div>
 
         <div id="history-view" class="hidden">
             <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold">← กลับ</button>
-            <select id="date-filter" onchange="filterHistory(this.value)" class="w-full p-2 border rounded mb-4"></select>
+            <input type="date" id="date-picker" onchange="filterHistory(this.value)" class="w-full p-2 border rounded mb-4">
             <div id="history-data" class="text-xs"></div>
         </div>
     </div>
@@ -51,45 +44,57 @@
             const data = await res.json();
             document.getElementById('items-list').innerHTML = data.slice(1).filter(r => r[1]).map((r, i) => `
                 <tr class="border-b">
-                    <td class="p-2">${r[1]}</td>
-                    <td class="p-2 flex items-center gap-1">
-                        <button onclick="adj(this,-0.1)" class="bg-gray-200 px-2 rounded font-bold">-</button>
-                        <input type="number" class="w-16 text-center border qty-input" value="0.0" step="0.1" data-name="${r[1]}" data-unit="${r[2]}">
-                        <button onclick="adj(this,0.1)" class="bg-gray-200 px-2 rounded font-bold">+</button>
+                    <td class="p-2 border">${r[1]}</td>
+                    <td class="p-2 border flex items-center gap-1">
+                        <button onclick="adj(this, -0.1)" class="bg-red-200 px-2 rounded font-bold">-</button>
+                        <input type="number" class="w-16 text-center border qty-input" value="0.0" step="1.0" data-name="${r[1]}" data-unit="${r[2]}">
+                        <button onclick="adj(this, 0.1)" class="bg-red-200 px-2 rounded font-bold">+</button>
                     </td>
-                    <td class="p-2">${r[2]}</td>
-                    <td class="p-2"><input type="text" class="w-full border note-input" placeholder="หมายเหตุ"></td>
+                    <td class="p-2 border">${r[2]}</td>
+                    <td class="p-2 border"><input type="text" class="w-full border note-input"></td>
                 </tr>
             `).join('');
         }
 
+        // ปุ่มสีแดง ปรับทีละ 0.1 (ย่อย)
         function adj(btn, val) {
             let input = btn.parentElement.querySelector('.qty-input');
-            let v = parseFloat(input.value) || 0;
-            let result = v + val;
-            if (result < 0) result = 0;
-            // เพิ่มเงื่อนไขเริ่มต้นตามที่คุณต้องการ: ถ้าเป็น 0 แล้วกด + ให้เด้งเป็น 1.0
-            if (val > 0 && v === 0) result = 1.0;
-            input.value = result.toFixed(1);
+            let v = Math.max(0, (parseFloat(input.value) || 0) + val);
+            input.value = v.toFixed(1);
         }
 
         async function saveData() {
-            const staff = document.getElementById('staff-name').value;
-            if(!staff) return alert('กรุณากรอกชื่อ');
-            document.getElementById('save-btn').disabled = true;
-            document.getElementById('save-btn').innerText = "กำลังบันทึก...";
-            
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true; btn.innerText = "กำลังบันทึก...";
             const rows = document.querySelectorAll('#items-list tr');
             for(let r of rows) {
                 let q = r.querySelector('.qty-input').value;
                 if(q > 0) {
                     await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ 
-                        checked_by: staff, item_name: r.querySelector('.qty-input').dataset.name, 
-                        quantity: q, unit: r.querySelector('.qty-input').dataset.unit, note: r.querySelector('.note-input').value 
+                        checked_by: document.getElementById('staff-name').value, 
+                        item_name: r.querySelector('.qty-input').dataset.name, 
+                        quantity: q, unit: r.querySelector('.qty-input').dataset.unit, 
+                        note: r.querySelector('.note-input').value 
                     })});
                 }
             }
             alert('บันทึกสำเร็จ!'); location.reload();
+        }
+
+        async function showHistory() {
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('history-view').classList.remove('hidden');
+            const res = await fetch(`${SCRIPT_URL}?sheet=บันทึกสต๊อก`);
+            window.histData = await res.json();
+        }
+
+        function filterHistory(date) {
+            const filtered = window.histData.filter(r => r[0] && r[0].startsWith(date));
+            document.getElementById('history-data').innerHTML = filtered.length ? 
+                `<table class="w-full border border-collapse">
+                    <tr class="bg-gray-100"><th class="border p-1">รายการ</th><th class="border p-1">จำนวน</th><th class="border p-1">หมายเหตุ</th></tr>
+                    ${filtered.map(r => `<tr><td class="border p-1">${r[4]}</td><td class="border p-1 text-center">${r[5]} ${r[6]}</td><td class="border p-1">${r[7]||''}</td></tr>`).join('')}
+                </table>` : `<p class="text-center text-red-500">ไม่พบรายการในวันที่เลือก</p>`;
         }
     </script>
 </body>
