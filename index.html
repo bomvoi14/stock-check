@@ -10,91 +10,211 @@
     <script>const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHg49ZFeI0-dBUZIwKznbIo97V1-F_zqz2LdScYdVzyYEr0aD64d3i4k-lkIESZGDZ9A/exec";</script>
 
     <div class="max-w-2xl mx-auto bg-white p-4 shadow-lg rounded-xl">
+        <!-- เมนูหลัก -->
         <div id="home-view" class="space-y-3">
-            <h2 class="font-bold text-center mb-4">เมนูเช็คสต็อก</h2>
-            <button onclick="openStock('ก๋วยเตี๋ยวหมู')" class="w-full p-3 bg-orange-500 text-white rounded-lg font-bold">🍜 ก๋วยเตี๋ยวหมู</button>
-            <button onclick="openStock('ก๋วยเตี๋ยวไก่')" class="w-full p-3 bg-green-600 text-white rounded-lg font-bold">🍲 ก๋วยเตี๋ยวไก่</button>
-            <button onclick="openStock('อาหารตามสั่ง')" class="w-full p-3 bg-red-600 text-white rounded-lg font-bold">🥘 อาหารตามสั่ง</button>
-            <button onclick="openStock('อุปกรณ์ในร้าน')" class="w-full p-3 bg-blue-600 text-white rounded-lg font-bold">🔧 อุปกรณ์ในร้าน</button>
-            <button onclick="showHistory()" class="w-full p-3 bg-gray-600 text-white rounded-lg font-bold">📅 ดูประวัติย้อนหลัง</button>
+            <h2 class="font-bold text-center mb-4 text-xl text-gray-800">เมนูเช็คสต็อกร้านชามโปรด</h2>
+            <button onclick="openStock('ก๋วยเตี๋ยวหมู')" class="w-full p-4 bg-orange-500 text-white rounded-lg font-bold text-lg shadow-md">🍜 ก๋วยเตี๋ยวหมู</button>
+            <button onclick="openStock('ก๋วยเตี๋ยวไก่')" class="w-full p-4 bg-green-600 text-white rounded-lg font-bold text-lg shadow-md">🍲 ก๋วยเตี๋ยวไก่</button>
+            <button onclick="openStock('อาหารตามสั่ง')" class="w-full p-4 bg-red-600 text-white rounded-lg font-bold text-lg shadow-md">🥘 อาหารตามสั่ง</button>
+            <button onclick="openStock('อุปกรณ์ในร้าน')" class="w-full p-4 bg-blue-600 text-white rounded-lg font-bold text-lg shadow-md">🔧 อุปกรณ์ในร้าน</button>
+            <button onclick="showHistory()" class="w-full p-4 bg-gray-600 text-white rounded-lg font-bold text-lg shadow-md mt-4">📅 ดูประวัติย้อนหลัง</button>
         </div>
 
+        <!-- หน้าเช็คสต็อก -->
         <div id="stock-view" class="hidden">
-            <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold">← กลับ</button>
-            <input id="staff-name" type="text" placeholder="ชื่อผู้เช็ค" class="w-full p-2 border rounded mb-4">
-            <table class="w-full text-sm border-collapse border">
-                <thead><tr class="bg-gray-100"><th class="border p-2">รายการ</th><th class="border p-2">จำนวน</th><th class="border p-2">หน่วย</th><th class="border p-2">หมายเหตุ</th></tr></thead>
-                <tbody id="items-list"></tbody>
-            </table>
-            <button id="save-btn" onclick="saveData()" class="w-full py-3 mt-4 bg-green-600 text-white rounded-lg font-bold">บันทึกข้อมูล</button>
+            <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold border px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">← กลับหน้าเมนู</button>
+            <input id="staff-name" type="text" placeholder="กรุณากรอกชื่อผู้เช็คสต็อก" class="w-full p-3 border-2 border-gray-300 rounded-lg mb-4 font-bold text-center">
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border border-gray-300 p-3 text-left w-1/3">รายการ</th>
+                            <th class="border border-gray-300 p-3 text-center">จำนวน</th>
+                            <th class="border border-gray-300 p-3 text-center w-1/6">หน่วย</th>
+                            <th class="border border-gray-300 p-3 text-left w-1/4">หมายเหตุ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-list"></tbody>
+                </table>
+            </div>
+            <button id="save-btn" onclick="saveData()" class="w-full py-4 mt-6 bg-green-600 text-white rounded-lg font-bold text-lg shadow-lg">💾 บันทึกข้อมูล</button>
         </div>
 
+        <!-- หน้าประวัติย้อนหลัง -->
         <div id="history-view" class="hidden">
-            <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold">← กลับ</button>
-            <input type="date" id="date-picker" onchange="filterHistory(this.value)" class="w-full p-2 border rounded mb-4">
-            <div id="history-data" class="text-xs"></div>
+            <button onclick="location.reload()" class="mb-4 text-blue-600 font-bold border px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">← กลับหน้าเมนู</button>
+            <h3 class="font-bold text-lg mb-2 text-center text-gray-700">เลือกวันที่เพื่อดูประวัติ</h3>
+            <input type="date" id="date-picker" onchange="filterHistory(this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg mb-4 text-center font-bold">
+            <div id="history-data" class="text-sm mt-4"></div>
         </div>
     </div>
 
     <script>
+        let currentShop = "";
+
+        // ฟังก์ชันโหลดรายการสินค้า
         async function openStock(sheet) {
+            currentShop = sheet;
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('stock-view').classList.remove('hidden');
-            const res = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`);
-            const data = await res.json();
-            document.getElementById('items-list').innerHTML = data.slice(1).filter(r => r[1]).map((r, i) => `
-                <tr class="border-b">
-                    <td class="p-2 border">${r[1]}</td>
-                    <td class="p-2 border flex items-center gap-1">
-                        <button onclick="adj(this, -0.1)" class="bg-red-200 px-2 rounded font-bold">-</button>
-                        <input type="number" class="w-16 text-center border qty-input" value="0.0" step="1.0" data-name="${r[1]}" data-unit="${r[2]}">
-                        <button onclick="adj(this, 0.1)" class="bg-red-200 px-2 rounded font-bold">+</button>
-                    </td>
-                    <td class="p-2 border">${r[2]}</td>
-                    <td class="p-2 border"><input type="text" class="w-full border note-input"></td>
-                </tr>
-            `).join('');
+            document.getElementById('items-list').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
+            
+            try {
+                const res = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`);
+                const data = await res.json();
+                
+                document.getElementById('items-list').innerHTML = data.slice(1).filter(r => r[1] && String(r[1]).trim() !== '').map((r, i) => `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 border border-gray-300 font-medium">${r[1]}</td>
+                        <td class="p-3 border border-gray-300">
+                            <div class="flex items-center justify-center gap-2">
+                                <!-- ปุ่มนอก (ปรับหลักทีละ 1) -->
+                                <button onclick="adj(this, -1)" class="w-8 h-8 bg-red-100 text-red-600 rounded font-bold hover:bg-red-200 border border-red-300">-</button>
+                                
+                                <!-- ช่อง Input (ลูกศรปรับย่อยทีละ 0.1) -->
+                                <input type="number" class="w-20 h-10 text-center border-2 border-gray-300 rounded font-bold text-lg qty-input focus:border-blue-500 focus:outline-none" value="0.0" step="0.1" data-name="${r[1]}" data-unit="${r[2]}">
+                                
+                                <!-- ปุ่มนอก (ปรับหลักทีละ 1) -->
+                                <button onclick="adj(this, 1)" class="w-8 h-8 bg-green-100 text-green-600 rounded font-bold hover:bg-green-200 border border-green-300">+</button>
+                            </div>
+                        </td>
+                        <td class="p-3 border border-gray-300 text-center text-gray-600">${r[2] || '-'}</td>
+                        <td class="p-3 border border-gray-300"><input type="text" class="w-full p-2 border rounded focus:border-blue-500 focus:outline-none note-input" placeholder="พิมพ์โน้ต..."></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                document.getElementById('items-list').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล โปรดตรวจสอบลิงก์อีกครั้ง</td></tr>';
+            }
         }
 
-        // ปุ่มสีแดง ปรับทีละ 0.1 (ย่อย)
+        // ฟังก์ชันสำหรับปุ่มนอก ปรับทีละ 1
         function adj(btn, val) {
             let input = btn.parentElement.querySelector('.qty-input');
-            let v = Math.max(0, (parseFloat(input.value) || 0) + val);
-            input.value = v.toFixed(1);
+            let v = parseFloat(input.value) || 0;
+            let result = v + val;
+            if (result < 0) result = 0; // ป้องกันค่าติดลบเด็ดขาด
+            input.value = result.toFixed(1);
         }
 
+        // ฟังก์ชันบันทึกข้อมูล
         async function saveData() {
-            const btn = document.getElementById('save-btn');
-            btn.disabled = true; btn.innerText = "กำลังบันทึก...";
-            const rows = document.querySelectorAll('#items-list tr');
-            for(let r of rows) {
-                let q = r.querySelector('.qty-input').value;
-                if(q > 0) {
-                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ 
-                        checked_by: document.getElementById('staff-name').value, 
-                        item_name: r.querySelector('.qty-input').dataset.name, 
-                        quantity: q, unit: r.querySelector('.qty-input').dataset.unit, 
-                        note: r.querySelector('.note-input').value 
-                    })});
-                }
+            const staff = document.getElementById('staff-name').value.trim();
+            if(!staff) {
+                alert('⚠️ กรุณากรอกชื่อผู้เช็คสต็อกก่อนบันทึกข้อมูล');
+                document.getElementById('staff-name').focus();
+                return;
             }
-            alert('บันทึกสำเร็จ!'); location.reload();
+
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true; 
+            btn.innerHTML = "⏳ กำลังบันทึกข้อมูล กรุณารอสักครู่...";
+            btn.classList.replace('bg-green-600', 'bg-gray-400');
+            
+            const rows = document.querySelectorAll('#items-list tr');
+            const dataToSubmit = [];
+            
+            rows.forEach(r => {
+                const qtyInput = r.querySelector('.qty-input');
+                if (qtyInput) {
+                    let q = parseFloat(qtyInput.value) || 0;
+                    if(q > 0) {
+                        dataToSubmit.push({ 
+                            checked_by: staff, 
+                            station: currentShop,
+                            category: "", 
+                            item_name: qtyInput.dataset.name, 
+                            quantity: q, 
+                            unit: qtyInput.dataset.unit, 
+                            note: r.querySelector('.note-input').value 
+                        });
+                    }
+                }
+            });
+
+            if (dataToSubmit.length === 0) {
+                alert('⚠️ ไม่มีรายการสินค้าที่ระบุจำนวน (จำนวนเป็น 0 ทั้งหมด)');
+                btn.disabled = false;
+                btn.innerHTML = "💾 บันทึกข้อมูล";
+                btn.classList.replace('bg-gray-400', 'bg-green-600');
+                return;
+            }
+
+            try {
+                for(let item of dataToSubmit) {
+                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) });
+                }
+                alert('✅ บันทึกข้อมูลเสร็จสมบูรณ์!'); 
+                location.reload();
+            } catch (error) {
+                alert('❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+                btn.disabled = false;
+                btn.innerHTML = "💾 บันทึกข้อมูล";
+                btn.classList.replace('bg-gray-400', 'bg-green-600');
+            }
         }
 
+        // ฟังก์ชันดูประวัติ
         async function showHistory() {
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('history-view').classList.remove('hidden');
-            const res = await fetch(`${SCRIPT_URL}?sheet=บันทึกสต๊อก`);
-            window.histData = await res.json();
+            document.getElementById('history-data').innerHTML = '<p class="text-center p-4 text-gray-500">กำลังดึงข้อมูลประวัติย้อนหลัง กรุณารอสักครู่...</p>';
+            
+            try {
+                const res = await fetch(`${SCRIPT_URL}?sheet=บันทึกสต๊อก`);
+                window.histData = await res.json();
+                document.getElementById('history-data').innerHTML = '<p class="text-center p-4 text-blue-500">โหลดข้อมูลสำเร็จ กรุณาเลือกวันที่ด้านบนเพื่อดูรายการ</p>';
+            } catch (error) {
+                document.getElementById('history-data').innerHTML = '<p class="text-center p-4 text-red-500">ดึงประวัติล้มเหลว ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</p>';
+            }
         }
 
+        // ฟังก์ชันกรองประวัติตามวันที่ (แก้ปัญหาค้นหาไม่เจอ)
         function filterHistory(date) {
-            const filtered = window.histData.filter(r => r[0] && r[0].startsWith(date));
-            document.getElementById('history-data').innerHTML = filtered.length ? 
-                `<table class="w-full border border-collapse">
-                    <tr class="bg-gray-100"><th class="border p-1">รายการ</th><th class="border p-1">จำนวน</th><th class="border p-1">หมายเหตุ</th></tr>
-                    ${filtered.map(r => `<tr><td class="border p-1">${r[4]}</td><td class="border p-1 text-center">${r[5]} ${r[6]}</td><td class="border p-1">${r[7]||''}</td></tr>`).join('')}
-                </table>` : `<p class="text-center text-red-500">ไม่พบรายการในวันที่เลือก</p>`;
+            if (!window.histData || window.histData.length === 0) return;
+            
+            const [y, m, d] = date.split('-');
+            const yThai = parseInt(y) + 543; // เผื่อกรณี Google Sheet เก็บเป็นปี พ.ศ.
+            
+            // ทำให้หาเจอแน่ๆ ไม่ว่า Sheet จะ Format วันที่มาแบบไหน
+            const dateVariations = [ date, `${d}/${m}/${y}`, `${m}/${d}/${y}`, `${d}/${m}/${yThai}` ];
+
+            const filtered = window.histData.slice(1).filter(r => {
+                if (!r[0]) return false;
+                const rowDate = String(r[0]);
+                return dateVariations.some(format => rowDate.includes(format));
+            });
+
+            if (filtered.length > 0) {
+                document.getElementById('history-data').innerHTML = `
+                    <div class="overflow-x-auto mt-2">
+                        <table class="w-full text-sm border-collapse border border-gray-300">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="border border-gray-300 p-2">ผู้บันทึก</th>
+                                    <th class="border border-gray-300 p-2 text-left">รายการ</th>
+                                    <th class="border border-gray-300 p-2 text-center">จำนวน</th>
+                                    <th class="border border-gray-300 p-2">โน้ต</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.reverse().map(r => `
+                                    <tr class="hover:bg-gray-50 border-b">
+                                        <td class="border border-gray-300 p-2 text-center">${r[1] || '-'}</td>
+                                        <td class="border border-gray-300 p-2 font-medium">${r[4] || r[2] || '-'}</td>
+                                        <td class="border border-gray-300 p-2 text-center font-bold text-blue-600">${r[5] || r[3] || '0'} ${r[6] || r[4] || ''}</td>
+                                        <td class="border border-gray-300 p-2 text-xs text-gray-500">${r[7] || r[5] || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+            } else {
+                document.getElementById('history-data').innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded p-4 text-center mt-2">
+                        <p class="text-red-500 font-bold">ไม่พบรายการบันทึกสต๊อกในวันที่ ${d}/${m}/${y}</p>
+                    </div>`;
+            }
         }
     </script>
 </body>
