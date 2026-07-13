@@ -8,7 +8,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans Thai', sans-serif; background-color: #fdf6e3; }
-        /* ซ่อนลูกศรในช่อง input สำหรับบางเบราว์เซอร์ให้ดูสะอาดขึ้น (เฉพาะตอนที่ไม่ได้โฟกัส) */
         input[type=number]::-webkit-inner-spin-button { opacity: 1; }
     </style>
 </head>
@@ -17,7 +16,7 @@
 
     <div class="max-w-3xl mx-auto bg-white p-6 shadow-2xl rounded-2xl border-t-8 border-amber-500">
         
-        <!-- แถบเลือกภาษา (อิงจากดีไซน์ Canva) -->
+        <!-- แถบเลือกภาษา -->
         <div class="flex justify-end gap-2 mb-6 border-b pb-4">
             <button onclick="setLang('th')" class="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all shadow-sm focus:ring-2 focus:ring-amber-200">TH ไทย</button>
             <button onclick="setLang('la')" class="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all shadow-sm focus:ring-2 focus:ring-amber-200">LA ລາວ</button>
@@ -104,26 +103,50 @@
         };
 
         let currentLang = 'th';
+        let unitTranslations = {}; // เก็บข้อมูลแปลภาษาของหน่วย
+
+        // โหลดข้อมูลแผ่นงาน "Translation" เก็บไว้เบื้องหลังทันทีที่เปิดเว็บ
+        async function loadUnitTranslations() {
+            try {
+                const res = await fetch(`${SCRIPT_URL}?sheet=Translation`);
+                const data = await res.json();
+                data.slice(1).forEach(row => {
+                    if (row[0]) {
+                        unitTranslations[row[0]] = {
+                            th: row[0],
+                            la: row[2] || row[0], // คอลัมน์ C (Index 2)
+                            mm: row[3] || row[0]  // คอลัมน์ D (Index 3)
+                        };
+                    }
+                });
+            } catch (e) {
+                console.error("Failed to load unit translations");
+            }
+        }
+        loadUnitTranslations();
 
         function setLang(lang) {
             currentLang = lang;
-            // เปลี่ยนข้อความทั่วไป
+            // เปลี่ยนข้อความ UI ทั่วไป
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (i18n[lang][key]) el.innerText = i18n[lang][key];
             });
-            // เปลี่ยนข้อความในช่องกรอก (Placeholder)
+            // เปลี่ยน Placeholder
             document.querySelectorAll('[data-i18n-ph]').forEach(el => {
                 const key = el.getAttribute('data-i18n-ph');
                 if (i18n[lang][key]) el.setAttribute('placeholder', i18n[lang][key]);
             });
-            // รีเฟรชตารางประวัติถ้าเปิดอยู่เพื่อให้อัปเดตภาษา
+            // เปลี่ยนภาษาสำหรับรายการวัตถุดิบและหน่วยแบบไดนามิก
+            document.querySelectorAll('.dyn-text').forEach(el => {
+                el.innerText = el.getAttribute('data-' + lang) || el.getAttribute('data-th');
+            });
+            // รีเฟรชตารางประวัติถ้าเปิดอยู่
             if(!document.getElementById('history-view').classList.contains('hidden')){
                 filterHistory();
             }
         }
 
-        // --- 2. ระบบดึงข้อมูลและจัดการตาราง ---
         let currentShop = "";
 
         async function openStock(sheet) {
@@ -136,31 +159,39 @@
                 const res = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`);
                 const data = await res.json();
                 
-                document.getElementById('items-list').innerHTML = data.slice(1).filter(r => r[1] && String(r[1]).trim() !== '').map((r, i) => `
+                document.getElementById('items-list').innerHTML = data.slice(1).filter(r => r[1] && String(r[1]).trim() !== '').map((r, i) => {
+                    // จัดเตรียมตัวแปรคำแปลสำหรับแต่ละแถว
+                    const item = { th: r[1], la: r[4] || r[1], mm: r[5] || r[1] }; // r[4] = Col E (ลาว), r[5] = Col F (พม่า)
+                    const unitTh = r[2] || '';
+                    const unit = {
+                        th: unitTh,
+                        la: unitTranslations[unitTh] ? unitTranslations[unitTh].la : unitTh,
+                        mm: unitTranslations[unitTh] ? unitTranslations[unitTh].mm : unitTh
+                    };
+
+                    return `
                     <tr class="border-b border-gray-100 hover:bg-white transition-colors">
-                        <td class="p-3 font-medium text-gray-800">${r[1]}</td>
+                        <td class="p-3 font-medium text-gray-800">
+                            <span class="dyn-text" data-th="${item.th}" data-la="${item.la}" data-mm="${item.mm}">${item[currentLang]}</span>
+                        </td>
                         <td class="p-3">
                             <div class="flex items-center justify-center gap-1 md:gap-2">
-                                <!-- ปุ่มแดงนอก: ปรับหลักทีละ 1 -->
                                 <button onclick="adj(this, -1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">-</button>
-                                
-                                <!-- ช่อง Input: ปรับย่อยทีละ 0.1 (ล็อก min=0) -->
-                                <input type="number" min="0" oninput="if(this.value < 0) this.value = 0;" class="w-16 md:w-20 h-10 text-center border-2 border-gray-200 rounded-lg font-bold text-lg qty-input focus:border-amber-400 outline-none transition-colors" value="0.0" step="0.1" data-name="${r[1]}" data-unit="${r[2]}">
-                                
-                                <!-- ปุ่มแดงนอก: ปรับหลักทีละ 1 -->
+                                <input type="number" min="0" oninput="if(this.value < 0) this.value = 0;" class="w-16 md:w-20 h-10 text-center border-2 border-gray-200 rounded-lg font-bold text-lg qty-input focus:border-amber-400 outline-none transition-colors" value="0.0" step="0.1" data-name="${item.th}" data-unit="${unit.th}">
                                 <button onclick="adj(this, 1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-green-50 hover:text-green-600 hover:border-green-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">+</button>
                             </div>
                         </td>
-                        <td class="p-3 text-center text-gray-500 text-sm font-medium">${r[2] || '-'}</td>
+                        <td class="p-3 text-center text-gray-500 text-sm font-medium">
+                            <span class="dyn-text" data-th="${unit.th}" data-la="${unit.la}" data-mm="${unit.mm}">${unit[currentLang]}</span>
+                        </td>
                         <td class="p-3"><input type="text" class="w-full p-2 border border-gray-200 rounded-lg focus:border-amber-400 outline-none note-input bg-gray-50 focus:bg-white transition-colors"></td>
                     </tr>
-                `).join('');
+                `}).join('');
             } catch (error) {
                 document.getElementById('items-list').innerHTML = `<tr><td colspan="4" class="text-center p-4 text-red-500 font-bold">⚠️ Connection Error</td></tr>`;
             }
         }
 
-        // ฟังก์ชันปุ่มภายนอก (ปรับหลักทีละ 1) - ล็อกไม่ให้ติดลบ
         function adj(btn, val) {
             let input = btn.parentElement.querySelector('.qty-input');
             let v = parseFloat(input.value) || 0;
@@ -169,7 +200,6 @@
             input.value = result.toFixed(1);
         }
 
-        // --- 3. ระบบบันทึกข้อมูล ---
         async function saveData() {
             const staff = document.getElementById('staff-name').value.trim();
             if(!staff) {
@@ -193,8 +223,10 @@
                     if(q > 0) {
                         dataToSubmit.push({ 
                             checked_by: staff, station: currentShop, category: "", 
-                            item_name: qtyInput.dataset.name, quantity: q, 
-                            unit: qtyInput.dataset.unit, note: r.querySelector('.note-input').value 
+                            item_name: qtyInput.dataset.name, // บันทึกเป็นภาษาไทยเสมอเพื่อการคำนวณที่ถูกต้อง
+                            quantity: q, 
+                            unit: qtyInput.dataset.unit, 
+                            note: r.querySelector('.note-input').value 
                         });
                     }
                 }
@@ -222,7 +254,6 @@
             }
         }
 
-        // --- 4. ระบบประวัติย้อนหลัง ---
         async function showHistory() {
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('history-view').classList.remove('hidden');
@@ -238,7 +269,7 @@
                 document.getElementById('shop-filter').innerHTML = `<option value="" data-i18n="allShops">${i18n[currentLang].allShops}</option>` + shops.map(s => `<option value="${s}">${s}</option>`).join('');
                 document.getElementById('staff-filter').innerHTML = `<option value="" data-i18n="allStaff">${i18n[currentLang].allStaff}</option>` + staffs.map(s => `<option value="${s}">${s}</option>`).join('');
                 
-                filterHistory(); // โหลดข้อมูลทั้งหมดมาแสดงตอนเปิดครั้งแรก
+                filterHistory();
             } catch (error) {
                 document.getElementById('history-data').innerHTML = `<p class="text-center p-4 text-red-500 font-bold">⚠️ Connection Error</p>`;
             }
@@ -275,17 +306,23 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${filtered.reverse().map((r, index) => `
+                                ${filtered.reverse().map((r, index) => {
+                                    // โหลดคำแปลไดนามิกสำหรับประวัติด้วย
+                                    const itemTh = r[4] || r[2] || '-';
+                                    const unitTh = r[6] || r[4] || '';
+                                    const uLa = unitTranslations[unitTh] ? unitTranslations[unitTh].la : unitTh;
+                                    const uMm = unitTranslations[unitTh] ? unitTranslations[unitTh].mm : unitTh;
+                                    return `
                                     <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-amber-50 transition-colors">
                                         <td class="border-b p-3 text-center font-medium text-amber-700">${r[2] || '-'}</td>
                                         <td class="border-b p-3 text-center text-gray-700">${r[1] || '-'}</td>
                                         <td class="border-b p-3">
-                                            <div class="font-bold text-gray-800">${r[4] || r[2] || '-'}</div>
+                                            <div class="font-bold text-gray-800 dyn-text" data-th="${itemTh}" data-la="${itemTh}" data-mm="${itemTh}">${itemTh}</div>
                                             <div class="text-xs text-gray-500 mt-1">${r[7] || r[5] || ''}</div>
                                         </td>
-                                        <td class="border-b p-3 text-center font-black text-lg text-green-600">${r[5] || r[3] || '0'} <span class="text-xs font-normal text-gray-500">${r[6] || r[4] || ''}</span></td>
+                                        <td class="border-b p-3 text-center font-black text-lg text-green-600">${r[5] || r[3] || '0'} <span class="text-xs font-normal text-gray-500 dyn-text" data-th="${unitTh}" data-la="${uLa}" data-mm="${uMm}">${currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unitTh}</span></td>
                                     </tr>
-                                `).join('')}
+                                `}).join('')}
                             </tbody>
                         </table>
                     </div>`;
@@ -297,7 +334,6 @@
             }
         }
         
-        // ตั้งค่าเริ่มต้นเป็นภาษาไทย
         setLang('th');
     </script>
 </body>
