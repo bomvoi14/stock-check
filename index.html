@@ -88,7 +88,7 @@
         const i18n = {
             th: {
                 title: "เช็คสต็อกร้านชามโปรด", menu1: "ก๋วยเตี๋ยวหมู", menu2: "ก๋วยเตี๋ยวไก่", menu3: "อาหารตามสั่ง", menu4: "อุปกรณ์ในร้าน",
-                historyBtn: "ดูประวัติย้อนหลัง", back: "กลับหน้าเมนู", staffPlaceholder: "กรุณากรอกชื่อผู้เช็คสต็อก",
+                historyBtn: "ดูประวัติย้อนหลัง", back: "กลับ", staffPlaceholder: "กรุณากรอกชื่อผู้เช็คสต็อก",
                 colItem: "รายการ", colQty: "จำนวน", colUnit: "หน่วย", colNote: "หมายเหตุ", saveBtn: "บันทึกข้อมูล",
                 saving: "กำลังบันทึกข้อมูล...", searchTitle: "ประวัติย้อนหลัง", allShops: "-- ทุกร้าน --", allStaff: "-- ผู้เช็คทุกคน --",
                 colShop: "ร้าน", colStaff: "ผู้บันทึก", loading: "กำลังโหลดข้อมูล...", noRecord: "ไม่พบรายการบันทึกตามเงื่อนไขที่เลือก"
@@ -120,19 +120,19 @@
         let globalTranslations = {}; 
         let isLoaded = false;
 
+        // ดึงพจนานุกรมแปลภาษาเริ่มต้น (หลักๆ คือ "หน่วย")
         async function getTranslations() {
             if (isLoaded) return;
             try {
                 const res = await fetch(`${SCRIPT_URL}?sheet=Translation`);
                 const data = await res.json();
                 
-                // ดึงข้อมูลรวดเดียว ทั้งหน่วย (C, D) และ รายการ (E, F) โดยอิงคีย์หลักจาก (B)
                 data.slice(1).forEach(row => {
                     const thKey = row[1] ? String(row[1]).trim() : ''; 
-                    const unitLa = row[2] ? String(row[2]).trim() : ''; 
-                    const unitMm = row[3] ? String(row[3]).trim() : ''; 
-                    const itemLa = row[4] ? String(row[4]).trim() : ''; 
-                    const itemMm = row[5] ? String(row[5]).trim() : ''; 
+                    const unitLa = row[2] ? String(row[2]).trim() : ''; // คอลัมน์ C (ลาว)
+                    const unitMm = row[3] ? String(row[3]).trim() : ''; // คอลัมน์ D (พม่า)
+                    const itemLa = row[4] ? String(row[4]).trim() : ''; // เผื่อมีการใส่ไว้ใน E
+                    const itemMm = row[5] ? String(row[5]).trim() : ''; // เผื่อมีการใส่ไว้ใน F
                     
                     if (thKey) {
                         globalTranslations[thKey] = { 
@@ -174,7 +174,6 @@
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('stock-view').classList.remove('hidden');
             
-            // ตั้งค่าป้ายชื่อหน้าย่อย
             const mKey = menuKeys[sheet];
             const titleLa = i18n.la[mKey] || sheet;
             const titleMm = i18n.mm[mKey] || sheet;
@@ -183,7 +182,7 @@
             document.getElementById('items-list').innerHTML = `<tr><td colspan="4" class="text-center p-8 text-gray-400 font-bold text-lg"><span class="animate-pulse">${i18n[currentLang].loading}</span></td></tr>`;
             
             try {
-                await getTranslations();
+                await getTranslations(); 
                 
                 const res = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`);
                 const data = await res.json();
@@ -192,11 +191,23 @@
                     .filter(r => r[1] && String(r[1]).trim() !== '') 
                     .map((r, i) => {
                         const thName = String(r[1]).trim();
+                        
+                        // 1. ดึงคำแปลวัตถุดิบจากคอลัมน์ E และ F ของชีทปัจจุบันเป็นหลัก
+                        let iLa = r[4] ? String(r[4]).trim() : '';
+                        let iMm = r[5] ? String(r[5]).trim() : '';
+                        
+                        // 2. ถ้าคอลัมน์ E/F ว่าง ให้ลองหาในพจนานุกรม
+                        if (!iLa && globalTranslations[thName]) iLa = globalTranslations[thName].la;
+                        if (!iMm && globalTranslations[thName]) iMm = globalTranslations[thName].mm;
+                        
                         const item = { 
                             th: thName, 
-                            la: globalTranslations[thName] ? globalTranslations[thName].la : thName, 
-                            mm: globalTranslations[thName] ? globalTranslations[thName].mm : thName 
+                            la: iLa || thName, 
+                            mm: iMm || thName 
                         };
+                        
+                        // 3. บันทึกคำแปลที่หาเจอเก็บไว้ เพื่อให้หน้าประวัติย้อนหลังเอาไปใช้ต่อได้!
+                        globalTranslations[thName] = { la: item.la, mm: item.mm };
                         
                         const unitTh = r[2] ? String(r[2]).trim() : '';
                         const unit = {
@@ -350,7 +361,7 @@
                             </thead>
                             <tbody>
                                 ${filtered.reverse().map((r, index) => {
-                                    // ใช้ globalTranslations สำหรับทั้งรายการและหน่วยในหน้าประวัติ
+                                    // ตารางประวัติ จะเอาคำแปลจาก globalTranslations มาใช้
                                     const itemTh = r[4] ? String(r[4]).trim() : (r[2] ? String(r[2]).trim() : '-');
                                     const unitTh = r[6] ? String(r[6]).trim() : (r[4] ? String(r[4]).trim() : '');
                                     
