@@ -11,22 +11,8 @@
         input[type=number]::-webkit-inner-spin-button { opacity: 1; }
     </style>
 </head>
-<body class="p-4 md:p-8 relative">
+<body class="p-4 md:p-8">
     <script>const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHg49ZFeI0-dBUZIwKznbIo97V1-F_zqz2LdScYdVzyYEr0aD64d3i4k-lkIESZGDZ9A/exec";</script>
-
-    <!-- Modal ยืนยันการบันทึก -->
-    <div id="confirm-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border-t-8 border-amber-500 transform scale-100 transition-transform">
-            <h3 class="text-xl font-bold text-amber-700 mb-4 text-center" data-i18n="confirmTitle">สรุปรายการที่แก้ไข</h3>
-            <div id="confirm-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 text-sm border p-3 rounded-xl bg-gray-50 shadow-inner">
-                <!-- รายการแก้ไขจะถูกแทรกที่นี่ -->
-            </div>
-            <div class="flex gap-3">
-                <button onclick="closeModal()" class="flex-1 p-3 border-2 border-gray-300 text-gray-600 rounded-xl font-bold hover:bg-gray-100 transition-colors" data-i18n="editBtn">กลับไปแก้ไข</button>
-                <button id="confirm-save-btn" onclick="executeSave()" class="flex-1 p-3 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 shadow-md transition-colors" data-i18n="confirmBtn">ยืนยันบันทึก</button>
-            </div>
-        </div>
-    </div>
 
     <div class="max-w-3xl mx-auto bg-white p-6 shadow-2xl rounded-2xl border-t-8 border-amber-500">
         
@@ -76,7 +62,7 @@
                     <tbody id="items-list"></tbody>
                 </table>
             </div>
-            <button onclick="prepareSave()" class="w-full py-4 mt-6 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-xl shadow-lg transition-all flex justify-center items-center gap-2"><span data-i18n="saveBtn">บันทึกข้อมูล</span></button>
+            <button id="save-btn" onclick="saveData()" class="w-full py-4 mt-6 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-xl shadow-lg transition-all flex justify-center items-center gap-2"><span data-i18n="saveBtn">บันทึกข้อมูล</span></button>
         </div>
 
         <!-- หน้าประวัติย้อนหลัง -->
@@ -108,24 +94,21 @@
                 historyBtn: "ดูประวัติย้อนหลัง", back: "กลับ", staffPlaceholder: "กรุณากรอกชื่อผู้เช็คสต็อก",
                 colItem: "รายการ", colQty: "จำนวน", colUnit: "หน่วย", colNote: "หมายเหตุ", saveBtn: "บันทึกข้อมูล",
                 saving: "กำลังบันทึกข้อมูล...", searchTitle: "ประวัติย้อนหลัง", allShops: "-- ทุกร้าน --", allStaff: "-- ผู้เช็คทุกคน --",
-                colShop: "ร้าน", colStaff: "ผู้บันทึก", loading: "กำลังโหลดข้อมูล...", noRecord: "ไม่พบรายการบันทึกตามเงื่อนไขที่เลือก",
-                confirmTitle: "สรุปรายการที่แก้ไข", editBtn: "กลับไปแก้ไข", confirmBtn: "ยืนยันบันทึก", noChange: "ไม่มีการแก้ไขข้อมูล"
+                colShop: "ร้าน", colStaff: "ผู้บันทึก", loading: "กำลังโหลดข้อมูล...", noRecord: "ไม่พบรายการบันทึกตามเงื่อนไขที่เลือก"
             },
             la: {
                 title: "ກວດສອບສະຕັອກຮ້ານຊາມໂປຣດ", menu1: "ເຝີໝູ", menu2: "ເຝີໄກ່", menu3: "ອາຫານຕາມສັ່ງ", menu4: "ອຸປະກອນໃນຮ້ານ",
                 historyBtn: "ເບິ່ງປະຫວັດ", back: "ກັບຄືນ", staffPlaceholder: "ກະລຸນາໃສ່ຊື່ຜູ້ກວດສະຕັອກ",
                 colItem: "ລາຍການ", colQty: "ຈຳນວນ", colUnit: "ຫົວໜ່ວຍ", colNote: "ໝາຍເຫດ", saveBtn: "ບັນທຶກຂໍ້ມູນ",
                 saving: "ກຳລັງບັນທຶກ...", searchTitle: "ປະຫວັດຍ້ອນຫຼັງ", allShops: "-- ທຸກຮ້ານ --", allStaff: "-- ຜູ້ກວດທຸກຄົນ --",
-                colShop: "ຮ້ານ", colStaff: "ຜູ້ບັນທຶກ", loading: "ກຳລັງໂຫຼດຂໍ້ມູນ...", noRecord: "ບໍ່ພົບລາຍການບັນທຶກ",
-                confirmTitle: "ສະຫຼຸບລາຍການທີ່ແກ້ໄຂ", editBtn: "ກັບໄປແກ້ໄຂ", confirmBtn: "ຢືນຢັນບັນທຶກ", noChange: "ບໍ່ມີການແກ້ໄຂຂໍ້ມູນ"
+                colShop: "ຮ້ານ", colStaff: "ຜູ້ບັນທຶກ", loading: "ກຳລັງໂຫຼດຂໍ້ມູນ...", noRecord: "ບໍ່ພົບລາຍການບັນທຶກ"
             },
             mm: {
                 title: "စတော့ရှယ်ယာစစ်ဆေးပါ", menu1: "ဝက်သားခေါက်ဆွဲ", menu2: "ကြက်သားခေါက်ဆွဲ", menu3: "မှာယူရန်အစားအစာ", menu4: "ဆိုင်သုံးပစ္စည်းများ",
                 historyBtn: "သမိုင်းကြည့်ပါ", back: "ပြန်သွားရန်", staffPlaceholder: "စစ်ဆေးသူအမည်ထည့်ပါ",
                 colItem: "အမည်", colQty: "အရေအတွက်", colUnit: "ယူနစ်", colNote: "မှတ်ချက်", saveBtn: "သိမ်းဆည်းပါ",
                 saving: "သိမ်းဆည်းနေသည်...", searchTitle: "သမိုင်းရှာဖွေပါ", allShops: "-- ဆိုင်အားလုံး --", allStaff: "-- ဝန်ထမ်းအားလုံး --",
-                colShop: "ဆိုင်", colStaff: "မှတ်တမ်းတင်သူ", loading: "ဒေတာကို ဖွင့်နေသည်...", noRecord: "မှတ်တမ်းမတွေ့ပါ",
-                confirmTitle: "ပြင်ဆင်ထားသော စာရင်းအကျဉ်းချုပ်", editBtn: "တည်းဖြတ်ရန် ပြန်သွားပါ", confirmBtn: "အတည်ပြုသိမ်းဆည်းပါ", noChange: "ပြောင်းလဲမှုမရှိပါ"
+                colShop: "ဆိုင်", colStaff: "မှတ်တမ်းတင်သူ", loading: "ဒေတာကို ဖွင့်နေသည်...", noRecord: "မှတ်တမ်းမတွေ့ပါ"
             }
         };
 
@@ -139,7 +122,6 @@
         let currentLang = 'th';
         let globalTranslations = {}; 
         let isLoaded = false;
-        let pendingDataToSubmit = []; // เก็บรายการรออัปเดตสำหรับหน้าต่างยืนยัน
 
         async function getTranslations() {
             if (isLoaded) return;
@@ -181,6 +163,7 @@
                 el.innerText = el.getAttribute('data-' + lang) || el.getAttribute('data-th');
             });
             
+            // อัปเดตภาษาป้ายแจ้งเตือน (ถ้าแสดงอยู่)
             const alertEl = document.getElementById('stock-alert');
             if (!alertEl.classList.contains('hidden')) {
                 const staff = alertEl.getAttribute('data-staff') || '';
@@ -203,6 +186,7 @@
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('stock-view').classList.remove('hidden');
             
+            // ซ่อนป้ายแจ้งเตือนและเคลียร์ชื่อรอไว้ก่อน
             document.getElementById('stock-alert').classList.add('hidden');
             document.getElementById('staff-name').value = '';
 
@@ -216,6 +200,7 @@
             try {
                 await getTranslations(); 
                 
+                // โหลดโครงสร้างและประวัติพร้อมกันเพื่อความรวดเร็ว
                 const [resTemplate, resHist] = await Promise.all([
                     fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`),
                     fetch(`${SCRIPT_URL}?sheet=บันทึกสต๊อก`)
@@ -224,14 +209,18 @@
                 const templateData = await resTemplate.json();
                 const histDataFull = await resHist.json();
                 
+                // 1. ดึงประวัติทั้งหมดที่ไม่ใช่บรรทัดว่าง
                 const validHist = histDataFull.slice(1).filter(r => r[0] && String(r[0]).trim() !== '');
                 
+                // 2. หาวันที่ของ "วันนี้"
                 const d = new Date();
                 const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
                 const todayVariations = [`${y}-${m}-${day}`, `${day}/${m}/${y}`, `${m}/${day}/${y}`, `${day}/${m}/${y+543}`];
                 
+                // 3. ดึงเฉพาะประวัติของ "วันนี้" และ "ร้านปัจจุบัน"
                 const todaysHistory = validHist.filter(r => r[2] === sheet && todayVariations.some(v => String(r[0]).includes(v)));
                 
+                // 4. สร้างคลังข้อมูลตัวเลขล่าสุดของวันนี้
                 const latestToday = {};
                 let lastStaff = "";
                 
@@ -241,9 +230,10 @@
                         qty: parseFloat(r[5]) || 0,
                         note: r[7] || '',
                     };
-                    lastStaff = r[1] || ''; 
+                    lastStaff = r[1] || ''; // คนที่บันทึกบรรทัดล่าสุด
                 });
 
+                // 5. แสดงป้ายแจ้งเตือน ถ้าวันนี้เคยมีการเช็คไปแล้ว
                 const alertEl = document.getElementById('stock-alert');
                 if (Object.keys(latestToday).length > 0) {
                     alertEl.setAttribute('data-staff', lastStaff);
@@ -253,9 +243,10 @@
                     else if(currentLang === 'mm') msg = `⚠️ ယနေ့ စတော့ရှယ်ယာစစ်ဆေးပြီးပါပြီ၊ နောက်ဆုံးစစ်ဆေးသူ <b>${lastStaff}</b>`;
                     else msg = `⚠️ วันนี้มีการเช็คสต็อกไปแล้ว ล่าสุดโดย <b>${lastStaff}</b>`;
                     alertEl.innerHTML = msg;
-                    document.getElementById('staff-name').value = lastStaff; 
+                    document.getElementById('staff-name').value = lastStaff; // ดึงชื่อใส่ให้อัตโนมัติ
                 }
                 
+                // 6. สร้างตารางพร้อมเอาตัวเลขเก่ามาใส่ (ถ้ามี)
                 document.getElementById('items-list').innerHTML = templateData.slice(1)
                     .filter(r => r[1] && String(r[1]).trim() !== '') 
                     .map((r, i) => {
@@ -277,9 +268,10 @@
                             mm: globalTranslations[unitTh] ? globalTranslations[unitTh].mm : unitTh
                         };
 
+                        // ดึงข้อมูลเดิมมาเตรียมไว้ ถ้าไม่มีให้เป็น 0
                         const prevData = latestToday[thName] || { qty: 0.0, note: '' };
                         const qtyVal = prevData.qty.toFixed(1);
-                        const noteVal = prevData.note.replace(/"/g, '&quot;');
+                        const noteVal = prevData.note.replace(/"/g, '&quot;'); // กันเครื่องหมายฟันหนูทำให้ HTML พัง
 
                         return `
                         <tr class="border-b border-gray-100 hover:bg-white transition-colors">
@@ -289,7 +281,7 @@
                             <td class="p-3">
                                 <div class="flex items-center justify-center gap-1 md:gap-2">
                                     <button onclick="adj(this, -1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">-</button>
-                                    <input type="number" min="0" oninput="if(this.value < 0) this.value = 0; checkEdit(this);" class="w-16 md:w-20 h-10 text-center border-2 border-gray-200 rounded-lg font-bold text-lg qty-input focus:border-amber-400 outline-none transition-colors text-gray-800" value="${qtyVal}" step="0.1" data-orig="${qtyVal}" data-name="${item.th}" data-unit="${unit.th}">
+                                    <input type="number" min="0" oninput="if(this.value < 0) this.value = 0;" class="w-16 md:w-20 h-10 text-center border-2 border-gray-200 rounded-lg font-bold text-lg qty-input focus:border-amber-400 outline-none transition-colors" value="${qtyVal}" step="0.1" data-name="${item.th}" data-unit="${unit.th}">
                                     <button onclick="adj(this, 1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-green-50 hover:text-green-600 hover:border-green-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">+</button>
                                 </div>
                             </td>
@@ -304,30 +296,15 @@
             }
         }
 
-        // เช็คว่ามีการแก้ไขตัวเลขหรือไม่
-        function checkEdit(input) {
-            let orig = parseFloat(input.dataset.orig) || 0;
-            let current = parseFloat(input.value) || 0;
-            if (current !== orig) {
-                input.classList.remove('text-gray-800');
-                input.classList.add('text-red-600');
-            } else {
-                input.classList.remove('text-red-600');
-                input.classList.add('text-gray-800');
-            }
-        }
-
         function adj(btn, val) {
             let input = btn.parentElement.querySelector('.qty-input');
             let v = parseFloat(input.value) || 0;
             let result = v + val;
             if (result < 0) result = 0; 
             input.value = result.toFixed(1);
-            checkEdit(input); // อัปเดตสีทันทีที่กดปุ่มบวกลบ
         }
 
-        // รวบรวมข้อมูลเพื่อเตรียมสรุปในหน้าต่างลอย
-        function prepareSave() {
+        async function saveData() {
             const staff = document.getElementById('staff-name').value.trim();
             if(!staff) {
                 alert('⚠️ ' + i18n[currentLang].staffPlaceholder);
@@ -335,70 +312,38 @@
                 return;
             }
 
-            pendingDataToSubmit = [];
-            let htmlList = '';
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true; 
+            btn.innerHTML = `⏳ <span data-i18n="saving">${i18n[currentLang].saving}</span>`;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            
             const rows = document.querySelectorAll('#items-list tr');
+            const dataToSubmit = [];
             
             rows.forEach(r => {
                 const qtyInput = r.querySelector('.qty-input');
                 if (qtyInput) {
                     let q = parseFloat(qtyInput.value) || 0;
-                    let orig = parseFloat(qtyInput.dataset.orig) || 0;
-                    
-                    // บันทึกเฉพาะรายการที่ถูกแก้ไขตัวเลขเท่านั้น (ไม่ให้ข้อมูลซ้ำซ้อนรกชีท)
-                    if(q !== orig) {
-                        let name = qtyInput.dataset.name;
-                        let unit = qtyInput.dataset.unit;
-                        
-                        // เอาคำแปลชื่อมาใช้ในหน้าต่างลอย
-                        const iLa = globalTranslations[name] ? globalTranslations[name].la : name;
-                        const iMm = globalTranslations[name] ? globalTranslations[name].mm : name;
-                        const dName = currentLang === 'la' ? iLa : currentLang === 'mm' ? iMm : name;
-
-                        const uLa = globalTranslations[unit] ? globalTranslations[unit].la : unit;
-                        const uMm = globalTranslations[unit] ? globalTranslations[unit].mm : unit;
-                        const dUnit = currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unit;
-
-                        pendingDataToSubmit.push({ 
+                    if(q > 0) {
+                        dataToSubmit.push({ 
                             checked_by: staff, station: currentShop, category: "", 
-                            item_name: name, 
-                            quantity: q, unit: unit, note: r.querySelector('.note-input').value 
+                            item_name: qtyInput.dataset.name, 
+                            quantity: q, unit: qtyInput.dataset.unit, note: r.querySelector('.note-input').value 
                         });
-                        
-                        htmlList += `
-                            <div class="flex justify-between items-center border-b border-gray-200 pb-2 last:border-0 last:pb-0">
-                                <span class="font-medium text-gray-700">${dName}</span>
-                                <div class="text-right">
-                                    <span class="text-gray-400 line-through text-xs mr-1">${orig}</span>
-                                    <span class="font-bold text-red-600 text-base">${q} <span class="text-xs font-normal text-gray-600">${dUnit}</span></span>
-                                </div>
-                            </div>`;
                     }
                 }
             });
 
-            if (pendingDataToSubmit.length === 0) {
-                alert('⚠️ ' + i18n[currentLang].noChange);
+            if (dataToSubmit.length === 0) {
+                alert('⚠️ ไม่มีรายการสินค้าที่ระบุจำนวน');
+                btn.disabled = false;
+                btn.innerHTML = `<span data-i18n="saveBtn">${i18n[currentLang].saveBtn}</span>`;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
                 return;
             }
 
-            document.getElementById('confirm-list').innerHTML = htmlList;
-            document.getElementById('confirm-modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('confirm-modal').classList.add('hidden');
-        }
-
-        // ยิงข้อมูลเข้า Google Sheets
-        async function executeSave() {
-            const btn = document.getElementById('confirm-save-btn');
-            btn.disabled = true; 
-            btn.innerHTML = `⏳ <span data-i18n="saving">${i18n[currentLang].saving}</span>`;
-            btn.classList.add('opacity-75', 'cursor-not-allowed');
-
             try {
-                for(let item of pendingDataToSubmit) {
+                for(let item of dataToSubmit) {
                     await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) });
                 }
                 alert('✅ บันทึกสำเร็จ / Success!'); 
@@ -406,9 +351,8 @@
             } catch (error) {
                 alert('❌ Error saving data');
                 btn.disabled = false;
-                btn.innerHTML = `<span data-i18n="confirmBtn">${i18n[currentLang].confirmBtn}</span>`;
+                btn.innerHTML = `<span data-i18n="saveBtn">${i18n[currentLang].saveBtn}</span>`;
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
-                closeModal();
             }
         }
 
@@ -445,17 +389,23 @@
                 return;
             }
             
+            // --- ระบบยุบรวมข้อมูล (Deduplicate) ให้เหลือเฉพาะตัวล่าสุดของวัน ---
             const uniqueMap = new Map();
             window.histData.slice(1).forEach(r => {
                 let rawDate = String(r[0]);
+                // ตัดเวลาทิ้งเพื่อใช้เป็นคีย์วัน (รองรับทั้งแบบมี T และเคาะวรรค)
                 let dateKey = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
                 let shop = r[2] || '';
                 let item = r[4] || '';
+                // สร้างคีย์เพื่อรวมข้อมูล: "วันที่_ร้าน_สินค้า"
                 let key = `${dateKey}_${shop}_${item}`;
+                // บันทึกทับตัวเก่าไปเรื่อยๆ ทำให้เหลือแค่บรรทัดสุดท้าย (ล่าสุด)
                 uniqueMap.set(key, r);
             });
             
+            // ดึงเฉพาะข้อมูลล่าสุดออกมาใช้
             let filtered = Array.from(uniqueMap.values());
+            // -----------------------------------------------------------
 
             const dateVal = document.getElementById('date-picker').value;
             const shopVal = document.getElementById('shop-filter').value;
@@ -498,8 +448,7 @@
                                         <td class="border-b p-3 text-center text-gray-700">${r[1] || '-'}</td>
                                         <td class="border-b p-3">
                                             <div class="font-bold text-gray-800 dyn-text" data-th="${itemTh}" data-la="${iLa}" data-mm="${iMm}">${currentLang === 'la' ? iLa : currentLang === 'mm' ? iMm : itemTh}</div>
-                                            <!-- เอาตัวเลขออกตรงนี้แล้ว ให้แสดงเฉพาะหมายเหตุ (ถ้ามี) -->
-                                            <div class="text-xs text-gray-500 mt-1">${r[7] ? r[7] : ''}</div>
+                                            <div class="text-xs text-gray-500 mt-1">${r[7] || r[5] || ''}</div>
                                         </td>
                                         <td class="border-b p-3 text-center font-black text-lg text-green-600">${r[5] || r[3] || '0'} <span class="text-xs font-normal text-gray-500 dyn-text" data-th="${unitTh}" data-la="${uLa}" data-mm="${uMm}">${currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unitTh}</span></td>
                                     </tr>
