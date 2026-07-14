@@ -8,6 +8,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans Thai', sans-serif; background-color: #fdf6e3; }
+        /* ซ่อนลูกศรในช่อง input แบบเดิม เพื่อความสวยงาม */
         input[type=number]::-webkit-inner-spin-button { opacity: 1; }
     </style>
 </head>
@@ -111,11 +112,11 @@
                 const res = await fetch(`${SCRIPT_URL}?sheet=Translation`);
                 const data = await res.json();
                 
-                // แก้ไข: ดึงคีย์ภาษาไทยจากคอลัมน์ B (index 1) เป็นหลัก
+                // ดึงคีย์ภาษาไทยจากคอลัมน์ B (Index 1), ลาว C (Index 2), พม่า D (Index 3)
                 data.slice(1).forEach(row => {
-                    const thKey = row[1] ? String(row[1]).trim() : ''; // คอลัมน์ B (ไทย)
-                    const laTrans = row[2] ? String(row[2]).trim() : ''; // คอลัมน์ C (ลาว)
-                    const mmTrans = row[3] ? String(row[3]).trim() : ''; // คอลัมน์ D (พม่า)
+                    const thKey = row[1] ? String(row[1]).trim() : ''; 
+                    const laTrans = row[2] ? String(row[2]).trim() : ''; 
+                    const mmTrans = row[3] ? String(row[3]).trim() : ''; 
                     
                     if (thKey) {
                         unitTranslations[thKey] = { 
@@ -127,7 +128,7 @@
                 });
                 isUnitLoaded = true;
             } catch (e) {
-                console.error("Failed to load unit translations");
+                console.error("Failed to load unit translations", e);
             }
         }
         
@@ -165,40 +166,47 @@
                 const res = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`);
                 const data = await res.json();
                 
-                document.getElementById('items-list').innerHTML = data.slice(1).filter(r => r[1] && String(r[1]).trim() !== '').map((r, i) => {
-                    const item = { th: String(r[1]).trim(), la: r[4] ? String(r[4]).trim() : String(r[1]).trim(), mm: r[5] ? String(r[5]).trim() : String(r[1]).trim() };
-                    
-                    // ตัดช่องว่างออกจากหน่วยภาษาไทยก่อนค้นหาคำแปล
-                    const unitTh = r[2] ? String(r[2]).trim() : '';
-                    const unit = {
-                        th: unitTh,
-                        la: unitTranslations[unitTh] ? unitTranslations[unitTh].la : unitTh,
-                        mm: unitTranslations[unitTh] ? unitTranslations[unitTh].mm : unitTh
-                    };
+                document.getElementById('items-list').innerHTML = data.slice(1)
+                    .filter(r => r[1] && String(r[1]).trim() !== '') // กรองแถวว่างทิ้ง
+                    .map((r, i) => {
+                        const thName = String(r[1]).trim();
+                        const item = { 
+                            th: thName, 
+                            la: r[4] ? String(r[4]).trim() : thName, 
+                            mm: r[5] ? String(r[5]).trim() : thName 
+                        };
+                        
+                        const unitTh = r[2] ? String(r[2]).trim() : '';
+                        const unit = {
+                            th: unitTh,
+                            la: unitTranslations[unitTh] ? unitTranslations[unitTh].la : unitTh,
+                            mm: unitTranslations[unitTh] ? unitTranslations[unitTh].mm : unitTh
+                        };
 
-                    return `
-                    <tr class="border-b border-gray-100 hover:bg-white transition-colors">
-                        <td class="p-3 font-medium text-gray-800">
-                            <span class="dyn-text" data-th="${item.th}" data-la="${item.la}" data-mm="${item.mm}">${item[currentLang]}</span>
-                        </td>
-                        <td class="p-3">
-                            <div class="flex items-center justify-center gap-1 md:gap-2">
-                                <button onclick="adj(this, -1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">-</button>
-                                <input type="number" min="0" oninput="if(this.value < 0) this.value = 0;" class="w-16 md:w-20 h-10 text-center border-2 border-gray-200 rounded-lg font-bold text-lg qty-input focus:border-amber-400 outline-none transition-colors" value="0.0" step="0.1" data-name="${item.th}" data-unit="${unit.th}">
-                                <button onclick="adj(this, 1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-green-50 hover:text-green-600 hover:border-green-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">+</button>
-                            </div>
-                        </td>
-                        <td class="p-3 text-center text-gray-500 text-sm font-medium">
-                            <span class="dyn-text" data-th="${unit.th}" data-la="${unit.la}" data-mm="${unit.mm}">${unit[currentLang]}</span>
-                        </td>
-                        <td class="p-3"><input type="text" class="w-full p-2 border border-gray-200 rounded-lg focus:border-amber-400 outline-none note-input bg-gray-50 focus:bg-white transition-colors"></td>
-                    </tr>
-                `}).join('');
+                        return `
+                        <tr class="border-b border-gray-100 hover:bg-white transition-colors">
+                            <td class="p-3 font-medium text-gray-800">
+                                <span class="dyn-text" data-th="${item.th}" data-la="${item.la}" data-mm="${item.mm}">${item[currentLang]}</span>
+                            </td>
+                            <td class="p-3">
+                                <div class="flex items-center justify-center gap-1 md:gap-2">
+                                    <button onclick="adj(this, -1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">-</button>
+                                    <input type="number" min="0" oninput="if(this.value < 0) this.value = 0;" class="w-16 md:w-20 h-10 text-center border-2 border-gray-200 rounded-lg font-bold text-lg qty-input focus:border-amber-400 outline-none transition-colors" value="0.0" step="0.1" data-name="${item.th}" data-unit="${unit.th}">
+                                    <button onclick="adj(this, 1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-green-50 hover:text-green-600 hover:border-green-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">+</button>
+                                </div>
+                            </td>
+                            <td class="p-3 text-center text-gray-500 text-sm font-medium">
+                                <span class="dyn-text" data-th="${unit.th}" data-la="${unit.la}" data-mm="${unit.mm}">${unit[currentLang]}</span>
+                            </td>
+                            <td class="p-3"><input type="text" class="w-full p-2 border border-gray-200 rounded-lg focus:border-amber-400 outline-none note-input bg-gray-50 focus:bg-white transition-colors"></td>
+                        </tr>
+                    `}).join('');
             } catch (error) {
                 document.getElementById('items-list').innerHTML = `<tr><td colspan="4" class="text-center p-4 text-red-500 font-bold">⚠️ Connection Error</td></tr>`;
             }
         }
 
+        // ปรับตัวเลข ปุ่มแดงหลักคือ 1.0 (ห้ามติดลบ)
         function adj(btn, val) {
             let input = btn.parentElement.querySelector('.qty-input');
             let v = parseFloat(input.value) || 0;
@@ -249,7 +257,7 @@
                 for(let item of dataToSubmit) {
                     await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) });
                 }
-                alert('✅ Success!'); 
+                alert('✅ บันทึกสำเร็จ / Success!'); 
                 location.reload();
             } catch (error) {
                 alert('❌ Error saving data');
@@ -267,7 +275,10 @@
             try {
                 await getUnitTranslations();
                 const res = await fetch(`${SCRIPT_URL}?sheet=บันทึกสต๊อก`);
-                window.histData = await res.json();
+                const rawData = await res.json();
+                
+                // กรองบรรทัดว่างทิ้งทันที โดยคอลัมน์แรกสุด (วันที่) ต้องมีข้อมูล
+                window.histData = [rawData[0], ...rawData.slice(1).filter(r => r[0] && String(r[0]).trim() !== '')];
                 
                 const shops = [...new Set(window.histData.slice(1).map(r => r[2]).filter(Boolean))];
                 const staffs = [...new Set(window.histData.slice(1).map(r => r[1]).filter(Boolean))];
@@ -282,7 +293,13 @@
         }
 
         function filterHistory() {
-            if (!window.histData || window.histData.length === 0) return;
+            if (!window.histData || window.histData.length <= 1) {
+                document.getElementById('history-data').innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center mt-4 shadow-inner">
+                        <p class="text-red-500 font-bold text-lg">⚠️ ${i18n[currentLang].noRecord}</p>
+                    </div>`;
+                return;
+            }
             
             const dateVal = document.getElementById('date-picker').value;
             const shopVal = document.getElementById('shop-filter').value;
@@ -313,7 +330,7 @@
                             </thead>
                             <tbody>
                                 ${filtered.reverse().map((r, index) => {
-                                    const itemTh = r[4] || r[2] || '-';
+                                    const itemTh = r[4] ? String(r[4]).trim() : (r[2] ? String(r[2]).trim() : '-');
                                     const unitTh = r[6] ? String(r[6]).trim() : (r[4] ? String(r[4]).trim() : '');
                                     const uLa = unitTranslations[unitTh] ? unitTranslations[unitTh].la : unitTh;
                                     const uMm = unitTranslations[unitTh] ? unitTranslations[unitTh].mm : unitTh;
