@@ -18,7 +18,7 @@
     <div id="confirm-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border-t-8 border-amber-500 transform scale-100 transition-transform">
             <h3 class="text-xl font-bold text-amber-700 mb-4 text-center" data-i18n="confirmTitle">สรุปรายการที่แก้ไข</h3>
-            <div id="confirm-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 text-sm border p-3 rounded-xl bg-gray-50 shadow-inner">
+            <div id="confirm-list" class="max-h-[60vh] overflow-y-auto mb-6 space-y-2 text-sm border p-3 rounded-xl bg-gray-50 shadow-inner">
             </div>
             <div class="flex gap-3">
                 <button onclick="closeModal()" class="flex-1 p-3 border-2 border-gray-300 text-gray-600 rounded-xl font-bold hover:bg-gray-100 transition-colors" data-i18n="editBtn">กลับไปแก้ไข</button>
@@ -106,7 +106,7 @@
                 saving: "กำลังบันทึกข้อมูล...", searchTitle: "ประวัติย้อนหลัง", allShops: "-- ทุกร้าน --", allStaff: "-- ผู้เช็คทุกคน --",
                 colShop: "ร้าน", colStaff: "ผู้บันทึก", loading: "กำลังโหลดข้อมูล...", noRecord: "ไม่พบรายการบันทึกตามเงื่อนไขที่เลือก",
                 confirmTitle: "สรุปรายการที่แก้ไข", editBtn: "กลับไปแก้ไข", confirmBtn: "ยืนยันบันทึก", noChange: "ไม่มีการแก้ไขข้อมูล",
-                catOthers: "หมวดหมู่ทั่วไป"
+                catOthers: "หมวดหมู่ทั่วไป", noteLabel: "หมายเหตุ"
             },
             la: {
                 title: "ກວດສອບສະຕັອກຮ້ານຊາມໂປຣດ", menu1: "ເຝີໝູ", menu2: "ເຝີໄກ່", menu3: "ອາຫານຕາມສັ່ງ", menu4: "ອຸປະກອນໃນຮ້ານ",
@@ -115,7 +115,7 @@
                 saving: "ກຳລັງບັນທຶກ...", searchTitle: "ປະຫວັດຍ້ອນຫຼັງ", allShops: "-- ທຸກຮ້ານ --", allStaff: "-- ຜູ້ກວດທຸກຄົນ --",
                 colShop: "ຮ້ານ", colStaff: "ຜູ້ບັນທຶກ", loading: "ກຳລັງໂຫຼດຂໍ້ມູນ...", noRecord: "ບໍ່ພົບລາຍການບັນທຶກ",
                 confirmTitle: "ສະຫຼຸບລາຍການທີ່ແກ້ໄຂ", editBtn: "ກັບໄປແກ້ໄຂ", confirmBtn: "ຢືນຢັນບັນທຶກ", noChange: "ບໍ່ມີການແກ້ໄຂຂໍ້ມູນ",
-                catOthers: "ໝວດໝູ່ທົ່ວໄປ"
+                catOthers: "ໝວດໝູ່ທົ່ວໄປ", noteLabel: "ໝາຍເຫດ"
             },
             mm: {
                 title: "စတော့ရှယ်ယာစစ်ဆေးပါ", menu1: "ဝက်သားခေါက်ဆွဲ", menu2: "ကြက်သားခေါက်ဆွဲ", menu3: "မှာယူရန်အစားအစာ", menu4: "ဆိုင်သုံးပစ္စည်းများ",
@@ -124,7 +124,7 @@
                 saving: "သိမ်းဆည်းနေသည်...", searchTitle: "သမိုင်းရှာဖွေပါ", allShops: "-- ဆိုင်အားလုံး --", allStaff: "-- ဝန်ထမ်းအားလုံး --",
                 colShop: "ဆိုင်", colStaff: "မှတ်တမ်းတင်သူ", loading: "ဒေတာကို ဖွင့်နေသည်...", noRecord: "မှတ်တမ်းမတွေ့ပါ",
                 confirmTitle: "ပြင်ဆင်ထားသော စာရင်းအကျဉ်းချုပ်", editBtn: "တည်းဖြတ်ရန် ပြန်သွားပါ", confirmBtn: "အတည်ပြုသိမ်းဆည်းပါ", noChange: "ပြောင်းလဲမှုမရှိပါ",
-                catOthers: "အထွေထွေအမျိုးအစား"
+                catOthers: "အထွေထွေအမျိုးအစား", noteLabel: "မှတ်ချက်"
             }
         };
 
@@ -261,14 +261,11 @@
                 templateData.slice(1)
                     .filter(r => r[1] && String(r[1]).trim() !== '') 
                     .forEach((r, i) => {
-                        // ดึงข้อมูลหมวดหมู่จากคอลัมน์ A (r[0])
                         let catTh = r[0] ? String(r[0]).trim() : i18n.th.catOthers;
                         
-                        // ถ้าเจอหมวดหมู่ใหม่ ให้สร้างแถว Header คั่น
                         if (catTh !== currentCategory) {
                             currentCategory = catTh;
                             
-                            // หาวิธีแปลชื่อหมวดหมู่ (ถ้ามีในพจนานุกรม)
                             let cLa = globalTranslations[catTh] ? globalTranslations[catTh].la : (catTh === i18n.th.catOthers ? i18n.la.catOthers : catTh);
                             let cMm = globalTranslations[catTh] ? globalTranslations[catTh].mm : (catTh === i18n.th.catOthers ? i18n.mm.catOthers : catTh);
                             
@@ -312,14 +309,14 @@
                             <td class="p-3">
                                 <div class="flex items-center justify-center gap-1 md:gap-2">
                                     <button onclick="adj(this, -1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">-</button>
-                                    <input type="number" min="0" oninput="if(this.value < 0) this.value = 0; checkEdit(this);" class="w-16 md:w-20 h-10 text-center border-2 border-gray-200 rounded-lg font-bold text-lg qty-input focus:border-amber-400 outline-none transition-colors text-gray-800" value="${qtyVal}" step="0.1" data-orig="${qtyVal}" data-name="${item.th}" data-unit="${unit.th}" data-category="${catTh}">
+                                    <input type="number" min="0" oninput="if(this.value < 0) this.value = 0; checkRowEdit(this);" class="w-16 md:w-20 h-10 text-center border-2 border-gray-200 rounded-lg font-bold text-lg qty-input focus:border-amber-400 outline-none transition-colors text-gray-800" value="${qtyVal}" step="0.1" data-orig="${qtyVal}" data-name="${item.th}" data-unit="${unit.th}" data-category="${catTh}">
                                     <button onclick="adj(this, 1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-green-50 hover:text-green-600 hover:border-green-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">+</button>
                                 </div>
                             </td>
                             <td class="p-3 text-center text-gray-500 text-sm font-medium">
                                 <span class="dyn-text" data-th="${unit.th}" data-la="${unit.la}" data-mm="${unit.mm}">${unit[currentLang]}</span>
                             </td>
-                            <td class="p-3"><input type="text" class="w-full p-2 border border-gray-200 rounded-lg focus:border-amber-400 outline-none note-input bg-gray-50 focus:bg-white transition-colors" value="${noteVal}"></td>
+                            <td class="p-3"><input type="text" oninput="checkRowEdit(this);" class="w-full p-2 border border-gray-200 rounded-lg focus:border-amber-400 outline-none note-input bg-gray-50 focus:bg-white transition-colors text-gray-800" value="${noteVal}" data-orig-note="${noteVal}"></td>
                         </tr>
                         `;
                     });
@@ -331,15 +328,32 @@
             }
         }
 
-        function checkEdit(input) {
-            let orig = parseFloat(input.dataset.orig) || 0;
-            let current = parseFloat(input.value) || 0;
-            if (current !== orig) {
-                input.classList.remove('text-gray-800');
-                input.classList.add('text-red-600');
+        // เช็คการแก้ไขทั้งจำนวนและหมายเหตุ
+        function checkRowEdit(element) {
+            let tr = element.closest('tr');
+            let qtyInput = tr.querySelector('.qty-input');
+            let noteInput = tr.querySelector('.note-input');
+            
+            let origQty = parseFloat(qtyInput.dataset.orig) || 0;
+            let currentQty = parseFloat(qtyInput.value) || 0;
+            
+            let origNote = noteInput.dataset.origNote || '';
+            let currentNote = noteInput.value.trim();
+            
+            if (currentQty !== origQty) {
+                qtyInput.classList.remove('text-gray-800');
+                qtyInput.classList.add('text-red-600');
             } else {
-                input.classList.remove('text-red-600');
-                input.classList.add('text-gray-800');
+                qtyInput.classList.remove('text-red-600');
+                qtyInput.classList.add('text-gray-800');
+            }
+            
+            if (currentNote !== origNote) {
+                noteInput.classList.remove('text-gray-800');
+                noteInput.classList.add('text-red-600');
+            } else {
+                noteInput.classList.remove('text-red-600');
+                noteInput.classList.add('text-gray-800');
             }
         }
 
@@ -349,7 +363,7 @@
             let result = v + val;
             if (result < 0) result = 0; 
             input.value = result.toFixed(1);
-            checkEdit(input); 
+            checkRowEdit(input); 
         }
 
         function prepareSave() {
@@ -360,20 +374,59 @@
                 return;
             }
 
+            const rows = document.querySelectorAll('#items-list tr');
+            let hasError = false;
+
+            // 1. ตรวจสอบความถูกต้องก่อน (บังคับใส่หมายเหตุถ้า Qty เป็น 0)
+            for (let r of rows) {
+                const qtyInput = r.querySelector('.qty-input');
+                const noteInput = r.querySelector('.note-input');
+                if (qtyInput && noteInput) {
+                    let q = parseFloat(qtyInput.value) || 0;
+                    let note = noteInput.value.trim();
+                    
+                    if (q === 0 && note === '') {
+                        let name = qtyInput.dataset.name;
+                        let iLa = globalTranslations[name] ? globalTranslations[name].la : name;
+                        let iMm = globalTranslations[name] ? globalTranslations[name].mm : name;
+                        let dName = currentLang === 'la' ? iLa : currentLang === 'mm' ? iMm : name;
+                        
+                        let msg = '';
+                        if(currentLang === 'la') msg = `⚠️ ກະລຸນາໃສ່ໝາຍເຫດສຳລັບລາຍການທີ່ເປັນ 0\n(ເຊັ່ນ: "ໝົດ") -> ${dName}`;
+                        else if(currentLang === 'mm') msg = `⚠️ 0 ဖြစ်နေသော စာရင်းများအတွက် မှတ်ချက်ထည့်ပါ\n(ဥပမာ "ကုန်ပြီ") -> ${dName}`;
+                        else msg = `⚠️ กรุณาใส่หมายเหตุสำหรับรายการที่เป็น 0\n(เช่น "หมด") -> ${dName}`;
+                        
+                        alert(msg);
+                        noteInput.focus();
+                        noteInput.classList.add('ring-2', 'ring-red-500', 'bg-red-50');
+                        setTimeout(() => noteInput.classList.remove('ring-2', 'ring-red-500', 'bg-red-50'), 3000);
+                        hasError = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasError) return;
+
+            // 2. รวบรวมข้อมูลที่ถูกแก้ไขเพื่อสรุป
             pendingDataToSubmit = [];
             let htmlList = '';
-            const rows = document.querySelectorAll('#items-list tr');
+            const tNoteLabel = i18n[currentLang].noteLabel;
             
             rows.forEach(r => {
                 const qtyInput = r.querySelector('.qty-input');
-                if (qtyInput) {
+                const noteInput = r.querySelector('.note-input');
+                if (qtyInput && noteInput) {
                     let q = parseFloat(qtyInput.value) || 0;
                     let orig = parseFloat(qtyInput.dataset.orig) || 0;
+                    let note = noteInput.value.trim();
+                    let origNote = noteInput.dataset.origNote || '';
                     
-                    if(q !== orig) {
+                    // บันทึกถ้ารายการมีการเปลี่ยนแปลง (จำนวนเปลี่ยน หรือ หมายเหตุเปลี่ยน)
+                    if(q !== orig || note !== origNote) {
                         let name = qtyInput.dataset.name;
                         let unit = qtyInput.dataset.unit;
-                        let cat = qtyInput.dataset.category; // รับค่าหมวดหมู่เพื่อส่งไปเก็บด้วย
+                        let cat = qtyInput.dataset.category;
                         
                         const iLa = globalTranslations[name] ? globalTranslations[name].la : name;
                         const iMm = globalTranslations[name] ? globalTranslations[name].mm : name;
@@ -386,15 +439,21 @@
                         pendingDataToSubmit.push({ 
                             checked_by: staff, station: currentShop, category: cat, 
                             item_name: name, 
-                            quantity: q, unit: unit, note: r.querySelector('.note-input').value 
+                            quantity: q, unit: unit, note: note 
                         });
                         
+                        let noteDisplay = note ? `<div class="text-xs text-amber-600 mt-1 bg-amber-50 inline-block px-2 py-1 rounded">📝 ${tNoteLabel}: ${note}</div>` : '';
+                        let qtyColor = q !== orig ? 'text-red-600' : 'text-green-600';
+
                         htmlList += `
-                            <div class="flex justify-between items-center border-b border-gray-200 pb-2 last:border-0 last:pb-0">
-                                <span class="font-medium text-gray-700">${dName}</span>
+                            <div class="flex justify-between items-center border-b border-gray-200 py-3 last:border-0 last:pb-0">
+                                <div class="flex flex-col">
+                                    <span class="font-medium text-gray-700">${dName}</span>
+                                    ${noteDisplay}
+                                </div>
                                 <div class="text-right">
                                     <span class="text-gray-400 line-through text-xs mr-1">${orig}</span>
-                                    <span class="font-bold text-red-600 text-base">${q} <span class="text-xs font-normal text-gray-600">${dUnit}</span></span>
+                                    <span class="font-bold ${qtyColor} text-base">${q} <span class="text-xs font-normal text-gray-600">${dUnit}</span></span>
                                 </div>
                             </div>`;
                     }
@@ -521,7 +580,6 @@
                                         <td class="border-b p-3 text-center text-gray-700">${r[1] || '-'}</td>
                                         <td class="border-b p-3">
                                             <div class="font-bold text-gray-800 dyn-text" data-th="${itemTh}" data-la="${iLa}" data-mm="${iMm}">${currentLang === 'la' ? iLa : currentLang === 'mm' ? iMm : itemTh}</div>
-                                            <!-- แสดงหมายเหตุใต้ชื่อสินค้า (ถ้ามี) -->
                                             <div class="text-xs text-gray-500 mt-1">${r[7] ? r[7] : ''}</div>
                                         </td>
                                         <td class="border-b p-3 text-center font-black text-lg text-green-600">${r[5] || r[3] || '0'} <span class="text-xs font-normal text-gray-500 dyn-text" data-th="${unitTh}" data-la="${uLa}" data-mm="${uMm}">${currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unitTh}</span></td>
