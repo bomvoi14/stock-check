@@ -328,7 +328,6 @@
             }
         }
 
-        // เช็คการแก้ไขทั้งจำนวนและหมายเหตุ
         function checkRowEdit(element) {
             let tr = element.closest('tr');
             let qtyInput = tr.querySelector('.qty-input');
@@ -377,7 +376,6 @@
             const rows = document.querySelectorAll('#items-list tr');
             let hasError = false;
 
-            // 1. ตรวจสอบความถูกต้องก่อน (บังคับใส่หมายเหตุถ้า Qty เป็น 0)
             for (let r of rows) {
                 const qtyInput = r.querySelector('.qty-input');
                 const noteInput = r.querySelector('.note-input');
@@ -408,7 +406,6 @@
             
             if (hasError) return;
 
-            // 2. รวบรวมข้อมูลที่ถูกแก้ไขเพื่อสรุป
             pendingDataToSubmit = [];
             let htmlList = '';
             const tNoteLabel = i18n[currentLang].noteLabel;
@@ -422,7 +419,6 @@
                     let note = noteInput.value.trim();
                     let origNote = noteInput.dataset.origNote || '';
                     
-                    // บันทึกถ้ารายการมีการเปลี่ยนแปลง (จำนวนเปลี่ยน หรือ หมายเหตุเปลี่ยน)
                     if(q !== orig || note !== origNote) {
                         let name = qtyInput.dataset.name;
                         let unit = qtyInput.dataset.unit;
@@ -573,6 +569,11 @@
                                     const iMm = globalTranslations[itemTh] ? globalTranslations[itemTh].mm : itemTh;
                                     const uLa = globalTranslations[unitTh] ? globalTranslations[unitTh].la : unitTh;
                                     const uMm = globalTranslations[unitTh] ? globalTranslations[unitTh].mm : unitTh;
+
+                                    let qtyVal = r[5];
+                                    if (qtyVal === undefined || qtyVal === null || String(qtyVal).trim() === '') {
+                                        qtyVal = (r[3] !== undefined && r[3] !== null && !isNaN(r[3]) && String(r[3]).trim() !== '') ? r[3] : '0';
+                                    }
                                     
                                     return `
                                     <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-amber-50 transition-colors">
@@ -582,7 +583,7 @@
                                             <div class="font-bold text-gray-800 dyn-text" data-th="${itemTh}" data-la="${iLa}" data-mm="${iMm}">${currentLang === 'la' ? iLa : currentLang === 'mm' ? iMm : itemTh}</div>
                                             <div class="text-xs text-gray-500 mt-1">${r[7] ? r[7] : ''}</div>
                                         </td>
-                                        <td class="border-b p-3 text-center font-black text-lg text-green-600">${r[5] || r[3] || '0'} <span class="text-xs font-normal text-gray-500 dyn-text" data-th="${unitTh}" data-la="${uLa}" data-mm="${uMm}">${currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unitTh}</span></td>
+                                        <td class="border-b p-3 text-center font-black text-lg text-green-600">${qtyVal} <span class="text-xs font-normal text-gray-500 dyn-text" data-th="${unitTh}" data-la="${uLa}" data-mm="${uMm}">${currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unitTh}</span></td>
                                     </tr>
                                 `}).join('')}
                             </tbody>
