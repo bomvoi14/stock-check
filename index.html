@@ -44,8 +44,9 @@
             <button onclick="openStock('อาหารตามสั่ง')" class="w-full p-5 bg-orange-600 text-white rounded-xl font-bold text-xl shadow-md hover:bg-orange-700 transform hover:scale-[1.02] transition-all flex items-center gap-3">🥘 <span data-i18n="menu3">อาหารตามสั่ง</span></button>
             <button onclick="openStock('อุปกรณ์ในร้าน')" class="w-full p-5 bg-blue-600 text-white rounded-xl font-bold text-xl shadow-md hover:bg-blue-700 transform hover:scale-[1.02] transition-all flex items-center gap-3">🔧 <span data-i18n="menu4">อุปกรณ์ในร้าน</span></button>
             
-            <div class="pt-4 border-t mt-6">
-                <button onclick="showHistory()" class="w-full p-4 bg-amber-100 text-amber-800 rounded-xl font-bold text-lg hover:bg-amber-200 transition-all flex items-center justify-center gap-2">🕒 <span data-i18n="historyBtn">ดูประวัติย้อนหลัง</span></button>
+            <div class="pt-4 border-t mt-6 flex flex-col md:flex-row gap-4">
+                <button onclick="showHistory()" class="flex-1 p-4 bg-amber-100 text-amber-800 rounded-xl font-bold text-lg hover:bg-amber-200 transition-all flex items-center justify-center gap-2 shadow-sm">🕒 <span data-i18n="historyBtn">ดูประวัติย้อนหลัง</span></button>
+                <button onclick="openRestock()" class="flex-1 p-4 bg-red-100 text-red-700 rounded-xl font-bold text-lg hover:bg-red-200 transition-all flex items-center justify-center gap-2 shadow-sm">🛒 <span data-i18n="restockBtn">สรุปของต้องซื้อ</span></button>
             </div>
         </div>
 
@@ -95,6 +96,34 @@
             
             <div id="history-data" class="text-sm mt-4"></div>
         </div>
+
+        <!-- หน้าสรุปของต้องซื้อ -->
+        <div id="restock-view" class="hidden">
+            <div class="flex items-center mb-6 pb-4 border-b border-amber-100">
+                <button onclick="location.reload()" class="text-amber-600 font-bold flex items-center gap-1 hover:bg-amber-50 px-3 py-2 rounded-lg transition-all">← <span data-i18n="back">กลับ</span></button>
+                <h2 class="text-xl md:text-2xl font-bold text-red-600 flex-1 text-center pr-16" data-i18n="restockTitle">สรุปรายการของต้องซื้อ</h2>
+            </div>
+            
+            <div class="bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-sm md:text-base border border-red-100">
+                💡 <span data-i18n="restockHint">ระบบจะดึงรายการที่สต็อกเหลือน้อยกว่าขั้นต่ำมาแสดง สามารถปรับเพิ่ม/ลดจำนวนที่ต้องการสั่งซื้อได้ตามต้องการ</span>
+            </div>
+
+            <div class="overflow-x-auto bg-gray-50 rounded-xl p-2 border border-gray-200 shadow-inner">
+                <table class="w-full text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-gray-200 text-gray-800 rounded-t-xl">
+                            <th data-i18n="colShop" class="p-3 text-center w-1/5 rounded-tl-lg font-bold">ร้าน</th>
+                            <th data-i18n="colItem" class="p-3 text-left w-1/3 font-bold">รายการ</th>
+                            <th data-i18n="colCurrent" class="p-3 text-center font-bold">สต็อกเหลือ</th>
+                            <th data-i18n="colBuy" class="p-3 text-center w-1/4 rounded-tr-lg font-bold">จำนวนที่สั่งซื้อ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="restock-list-body"></tbody>
+                </table>
+            </div>
+            
+            <button onclick="copyRestockList()" class="w-full py-4 mt-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xl shadow-lg transition-all flex justify-center items-center gap-2"><span data-i18n="copyListBtn">📋 คัดลอกใบสั่งซื้อ</span></button>
+        </div>
     </div>
 
     <script>
@@ -103,28 +132,34 @@
                 title: "เช็คสต็อกร้านชามโปรด", menu1: "ก๋วยเตี๋ยวหมู", menu2: "ก๋วยเตี๋ยวไก่", menu3: "อาหารตามสั่ง", menu4: "อุปกรณ์ในร้าน",
                 historyBtn: "ดูประวัติย้อนหลัง", back: "กลับ", staffPlaceholder: "กรุณากรอกชื่อผู้เช็คสต็อก",
                 colItem: "รายการ", colQty: "จำนวน", colUnit: "หน่วย", colNote: "หมายเหตุ", saveBtn: "บันทึกข้อมูล",
-                saving: "กำลังบันทึกข้อมูล...", searchTitle: "ประวัติย้อนหลัง", allShops: "-- ทุกร้าน --", allStaff: "-- ผู้เช็คทุกคน --",
-                colShop: "ร้าน", colStaff: "ผู้บันทึก", loading: "กำลังโหลดข้อมูล...", noRecord: "ไม่พบรายการบันทึกตามเงื่อนไขที่เลือก",
+                saving: "กำลังดำเนินการ...", searchTitle: "ประวัติย้อนหลัง", allShops: "-- ทุกร้าน --", allStaff: "-- ผู้เช็คทุกคน --",
+                colShop: "ร้าน", colStaff: "ผู้บันทึก", loading: "กำลังโหลดข้อมูล...", noRecord: "ไม่พบรายการ",
                 confirmTitle: "สรุปรายการที่แก้ไข", editBtn: "กลับไปแก้ไข", confirmBtn: "ยืนยันบันทึก", noChange: "ไม่มีการแก้ไขข้อมูล",
-                catOthers: "หมวดหมู่ทั่วไป", noteLabel: "หมายเหตุ"
+                catOthers: "หมวดหมู่ทั่วไป", noteLabel: "หมายเหตุ",
+                restockBtn: "สรุปของต้องซื้อ", restockTitle: "สรุปรายการของต้องซื้อ", colCurrent: "สต็อกเหลือ", colBuy: "จำนวนที่สั่งซื้อ", 
+                copyListBtn: "📋 คัดลอกใบสั่งซื้อ", restockHint: "ระบบดึงรายการที่สต็อกเหลือน้อยมาแสดง สามารถปรับเพิ่มลดจำนวนที่ต้องการสั่งซื้อได้ตามต้องการ"
             },
             la: {
                 title: "ກວດສອບສະຕັອກຮ້ານຊາມໂປຣດ", menu1: "ເຝີໝູ", menu2: "ເຝີໄກ່", menu3: "ອາຫານຕາມສັ່ງ", menu4: "ອຸປະກອນໃນຮ້ານ",
                 historyBtn: "ເບິ່ງປະຫວັດ", back: "ກັບຄືນ", staffPlaceholder: "ກະລຸນາໃສ່ຊື່ຜູ້ກວດສະຕັອກ",
                 colItem: "ລາຍການ", colQty: "ຈຳນວນ", colUnit: "ຫົວໜ່ວຍ", colNote: "ໝາຍເຫດ", saveBtn: "ບັນທຶກຂໍ້ມູນ",
-                saving: "ກຳລັງບັນທຶກ...", searchTitle: "ປະຫວັດຍ້ອນຫຼັງ", allShops: "-- ທຸກຮ້ານ --", allStaff: "-- ຜູ້ກວດທຸກຄົນ --",
-                colShop: "ຮ້ານ", colStaff: "ຜູ້ບັນທຶກ", loading: "ກຳລັງໂຫຼດຂໍ້ມູນ...", noRecord: "ບໍ່ພົບລາຍການບັນທຶກ",
+                saving: "ກຳລັງດຳເນີນການ...", searchTitle: "ປະຫວັດຍ້ອນຫຼັງ", allShops: "-- ທຸກຮ້ານ --", allStaff: "-- ຜູ້ກວດທຸກຄົນ --",
+                colShop: "ຮ້ານ", colStaff: "ຜູ້ບັນທຶກ", loading: "ກຳລັງໂຫຼດຂໍ້ມູນ...", noRecord: "ບໍ່ພົບລາຍການ",
                 confirmTitle: "ສະຫຼຸບລາຍການທີ່ແກ້ໄຂ", editBtn: "ກັບໄປແກ້ໄຂ", confirmBtn: "ຢືນຢັນບັນທຶກ", noChange: "ບໍ່ມີການແກ້ໄຂຂໍ້ມູນ",
-                catOthers: "ໝວດໝູ່ທົ່ວໄປ", noteLabel: "ໝາຍເຫດ"
+                catOthers: "ໝວດໝູ່ທົ່ວໄປ", noteLabel: "ໝາຍເຫດ",
+                restockBtn: "ສະຫຼຸບເຄື່ອງຕ້ອງຊື້", restockTitle: "ສະຫຼຸບລາຍການເຄື່ອງຕ້ອງຊື້", colCurrent: "ສະຕັອກເຫຼືອ", colBuy: "ຈຳນວນທີ່ສັ່ງຊື້",
+                copyListBtn: "📋 ສຳເນົາໃບສັ່ງຊື້", restockHint: "ສາມາດປັບເພີ່ມ/ຫຼຸດຈຳນວນທີ່ຕ້ອງການສັ່ງຊື້ໄດ້ຕາມຕ້ອງການ"
             },
             mm: {
                 title: "စတော့ရှယ်ယာစစ်ဆေးပါ", menu1: "ဝက်သားခေါက်ဆွဲ", menu2: "ကြက်သားခေါက်ဆွဲ", menu3: "မှာယူရန်အစားအစာ", menu4: "ဆိုင်သုံးပစ္စည်းများ",
                 historyBtn: "သမိုင်းကြည့်ပါ", back: "ပြန်သွားရန်", staffPlaceholder: "စစ်ဆေးသူအမည်ထည့်ပါ",
                 colItem: "အမည်", colQty: "အရေအတွက်", colUnit: "ယူနစ်", colNote: "မှတ်ချက်", saveBtn: "သိမ်းဆည်းပါ",
-                saving: "သိမ်းဆည်းနေသည်...", searchTitle: "သမိုင်းရှာဖွေပါ", allShops: "-- ဆိုင်အားလုံး --", allStaff: "-- ဝန်ထမ်းအားလုံး --",
+                saving: "လုပ်ဆောင်နေသည်...", searchTitle: "သမိုင်းရှာဖွေပါ", allShops: "-- ဆိုင်အားလုံး --", allStaff: "-- ဝန်ထမ်းအားလုံး --",
                 colShop: "ဆိုင်", colStaff: "မှတ်တမ်းတင်သူ", loading: "ဒေတာကို ဖွင့်နေသည်...", noRecord: "မှတ်တမ်းမတွေ့ပါ",
                 confirmTitle: "ပြင်ဆင်ထားသော စာရင်းအကျဉ်းချုပ်", editBtn: "တည်းဖြတ်ရန် ပြန်သွားပါ", confirmBtn: "အတည်ပြုသိမ်းဆည်းပါ", noChange: "ပြောင်းလဲမှုမရှိပါ",
-                catOthers: "အထွေထွေအမျိုးအစား", noteLabel: "မှတ်ချက်"
+                catOthers: "အထွေထွေအမျိုးအစား", noteLabel: "မှတ်ချက်",
+                restockBtn: "ဝယ်ရန်စာရင်း", restockTitle: "ဝယ်ရမည့်ပစ္စည်းများစာရင်း", colCurrent: "လက်ကျန်", colBuy: "ဝယ်မည့်အရေအတွက်",
+                copyListBtn: "📋 စာရင်းကို ကူးယူပါ", restockHint: "ဝယ်ယူလိုသော ပမာဏကို လိုအပ်သလို ပြောင်းလဲနိုင်ပါသည်။"
             }
         };
 
@@ -268,7 +303,6 @@
                             
                             let cLa = globalTranslations[catTh] ? globalTranslations[catTh].la : (catTh === i18n.th.catOthers ? i18n.la.catOthers : catTh);
                             let cMm = globalTranslations[catTh] ? globalTranslations[catTh].mm : (catTh === i18n.th.catOthers ? i18n.mm.catOthers : catTh);
-                            
                             let displayCat = currentLang === 'la' ? cLa : currentLang === 'mm' ? cMm : catTh;
                             
                             htmlContent += `
@@ -281,8 +315,9 @@
                         }
 
                         const thName = String(r[1]).trim();
-                        let iLa = r[4] ? String(r[4]).trim() : '';
-                        let iMm = r[5] ? String(r[5]).trim() : '';
+                        // อัปเดต Index คอลัมน์ F (5) เป็นลาว, G (6) เป็นพม่า ตามการตั้งค่าใหม่
+                        let iLa = r[5] ? String(r[5]).trim() : '';
+                        let iMm = r[6] ? String(r[6]).trim() : '';
                         
                         if (!iLa && globalTranslations[thName]) iLa = globalTranslations[thName].la;
                         if (!iMm && globalTranslations[thName]) iMm = globalTranslations[thName].mm;
@@ -362,7 +397,20 @@
             let result = v + val;
             if (result < 0) result = 0; 
             input.value = result.toFixed(1);
-            checkRowEdit(input); 
+            
+            if (input.classList.contains('restock-input')) {
+                let current = parseFloat(input.value) || 0;
+                let suggest = parseFloat(input.dataset.suggest) || 0;
+                if(current !== suggest) {
+                    input.classList.add('text-blue-600');
+                    input.classList.remove('text-gray-800');
+                } else {
+                    input.classList.remove('text-blue-600');
+                    input.classList.add('text-gray-800');
+                }
+            } else {
+                checkRowEdit(input); 
+            }
         }
 
         function prepareSave() {
@@ -488,6 +536,129 @@
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
                 closeModal();
             }
+        }
+
+        async function openRestock() {
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('restock-view').classList.remove('hidden');
+            document.getElementById('restock-list-body').innerHTML = `<tr><td colspan="4" class="text-center p-8 text-gray-400 font-bold text-lg"><span class="animate-pulse">${i18n[currentLang].loading}</span></td></tr>`;
+            
+            try {
+                await getTranslations();
+                
+                const sheetsToFetch = ['ก๋วยเตี๋ยวหมู', 'ก๋วยเตี๋ยวไก่', 'อาหารตามสั่ง', 'อุปกรณ์ในร้าน', 'บันทึกสต๊อก'];
+                const promises = sheetsToFetch.map(s => fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(s)}`).then(r => r.json()));
+                const results = await Promise.all(promises);
+                
+                const histDataFull = results.pop(); 
+                const validHist = histDataFull.slice(1).filter(r => r[0] && String(r[0]).trim() !== '');
+
+                const currentStockMap = {};
+                validHist.forEach(r => {
+                    let item = r[4] ? String(r[4]).trim() : (r[2] ? String(r[2]).trim() : '');
+                    let qty = parseFloat(r[5]);
+                    if (isNaN(qty)) qty = parseFloat(r[3]) || 0;
+                    currentStockMap[item] = qty; 
+                });
+
+                let htmlContent = '';
+                let hasItemsToBuy = false;
+
+                results.forEach((sheetData, index) => {
+                    const shopName = sheetsToFetch[index];
+
+                    sheetData.slice(1).forEach((r, i) => {
+                        if (!r[1] || String(r[1]).trim() === '') return;
+                        
+                        let itemName = String(r[1]).trim();
+                        // อัปเดตการอ่านค่าคอลัมน์ใหม่: D(3) = Min, E(4) = Max
+                        let minStock = parseFloat(r[3]); 
+                        let targetStock = parseFloat(r[4]); 
+
+                        if (!isNaN(minStock) && !isNaN(targetStock)) {
+                            let currentQty = currentStockMap[itemName] !== undefined ? currentStockMap[itemName] : 0;
+                            
+                            if (currentQty <= minStock) {
+                                hasItemsToBuy = true;
+                                let suggestBuy = targetStock - currentQty;
+                                if (suggestBuy < 0) suggestBuy = 0;
+
+                                let sLa = i18n.la[menuKeys[shopName]] || shopName;
+                                let sMm = i18n.mm[menuKeys[shopName]] || shopName;
+                                let displayShop = currentLang === 'la' ? sLa : currentLang === 'mm' ? sMm : shopName;
+
+                                // อัปเดตการอ่านคำแปลใหม่: F(5) = ลาว, G(6) = พม่า
+                                let iLa = r[5] ? String(r[5]).trim() : (globalTranslations[itemName] ? globalTranslations[itemName].la : itemName);
+                                let iMm = r[6] ? String(r[6]).trim() : (globalTranslations[itemName] ? globalTranslations[itemName].mm : itemName);
+                                let displayItem = currentLang === 'la' ? iLa : currentLang === 'mm' ? iMm : itemName;
+
+                                let unitTh = r[2] ? String(r[2]).trim() : '';
+                                let uLa = globalTranslations[unitTh] ? globalTranslations[unitTh].la : unitTh;
+                                let uMm = globalTranslations[unitTh] ? globalTranslations[unitTh].mm : unitTh;
+                                let displayUnit = currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unitTh;
+
+                                let currentQtyDisplay = currentQty <= 0 ? `<span class="text-red-600 font-bold">0 ${displayUnit}</span>` : `${currentQty} ${displayUnit}`;
+
+                                htmlContent += `
+                                <tr class="border-b border-gray-100 hover:bg-white transition-colors">
+                                    <td class="p-3 text-center text-xs font-bold text-gray-500">${displayShop}</td>
+                                    <td class="p-3 font-medium text-gray-800">${displayItem}</td>
+                                    <td class="p-3 text-center text-sm">${currentQtyDisplay}</td>
+                                    <td class="p-3">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <button onclick="adj(this, -1)" class="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-red-50 hover:text-red-600 border shadow-sm">-</button>
+                                            <input type="number" min="0" oninput="if(this.value < 0) this.value = 0;" class="w-16 h-10 text-center border-2 border-blue-200 rounded-lg font-bold text-lg focus:border-blue-500 outline-none transition-colors text-gray-800 buy-qty-input restock-input" value="${suggestBuy.toFixed(1)}" step="0.1" data-suggest="${suggestBuy.toFixed(1)}" data-name="${itemName}" data-unit="${unitTh}">
+                                            <button onclick="adj(this, 1)" class="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-green-50 hover:text-green-600 border shadow-sm">+</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                `;
+                            }
+                        }
+                    });
+                });
+
+                if (!hasItemsToBuy) {
+                    htmlContent = `<tr><td colspan="4" class="text-center p-8 text-green-600 font-bold text-lg">✨ สินค้าในสต็อกเพียงพอ ไม่มีรายการที่ต้องซื้อเพิ่ม</td></tr>`;
+                }
+                
+                document.getElementById('restock-list-body').innerHTML = htmlContent;
+
+            } catch (error) {
+                document.getElementById('restock-list-body').innerHTML = `<tr><td colspan="4" class="text-center p-4 text-red-500 font-bold">⚠️ Connection Error</td></tr>`;
+            }
+        }
+
+        function copyRestockList() {
+            let text = "🛒 รายการสั่งซื้อของ (ร้านชามโปรด)\n\n";
+            const rows = document.querySelectorAll('#restock-list-body tr');
+            let hasItems = false;
+            
+            rows.forEach(r => {
+                const input = r.querySelector('.buy-qty-input');
+                if (input) {
+                    let val = parseFloat(input.value) || 0;
+                    if (val > 0) {
+                        let name = input.dataset.name;
+                        let unit = input.dataset.unit;
+                        text += `- ${name}: ${val} ${unit}\n`;
+                        hasItems = true;
+                    }
+                }
+            });
+            
+            if (!hasItems) {
+                alert("ไม่มีรายการที่ต้องซื้อครับ");
+                return;
+            }
+            
+            text += "\nขอบคุณครับ 🙏";
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert("✅ คัดลอกรายการสั่งซื้อเรียบร้อยแล้ว\nสามารถเปิดแอป LINE แล้วกด 'วาง (Paste)' ส่งเข้ากลุ่มได้เลยครับ!");
+            }).catch(err => {
+                alert("❌ ไม่สามารถคัดลอกได้โดยอัตโนมัติ รบกวนกดคัดลอกด้วยตัวเองครับ");
+            });
         }
 
         async function showHistory() {
