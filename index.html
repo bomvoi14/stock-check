@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เช็คสต็อกร้านชามโปรด</title>
+    <title>ระบบสต็อกร้านชามโปรด</title>
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700&display=swap');
@@ -17,9 +17,8 @@
     <!-- Modal ยืนยันการบันทึก -->
     <div id="confirm-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border-t-8 border-amber-500 transform scale-100 transition-transform">
-            <h3 class="text-xl font-bold text-amber-700 mb-4 text-center" data-i18n="confirmTitle">สรุปรายการที่แก้ไข</h3>
-            <div id="confirm-list" class="max-h-[60vh] overflow-y-auto mb-6 space-y-2 text-sm border p-3 rounded-xl bg-gray-50 shadow-inner">
-            </div>
+            <h3 id="confirm-modal-title" class="text-xl font-bold text-amber-700 mb-4 text-center">สรุปรายการ</h3>
+            <div id="confirm-list" class="max-h-[60vh] overflow-y-auto mb-6 space-y-2 text-sm border p-3 rounded-xl bg-gray-50 shadow-inner"></div>
             <div class="flex gap-3">
                 <button onclick="closeModal()" class="flex-1 p-3 border-2 border-gray-300 text-gray-600 rounded-xl font-bold hover:bg-gray-100 transition-colors" data-i18n="editBtn">กลับไปแก้ไข</button>
                 <button id="confirm-save-btn" onclick="executeSave()" class="flex-1 p-3 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 shadow-md transition-colors" data-i18n="confirmBtn">ยืนยันบันทึก</button>
@@ -31,66 +30,73 @@
         
         <!-- แถบเลือกภาษา -->
         <div class="flex justify-end gap-2 mb-6 border-b pb-4 border-gray-100">
-            <button onclick="setLang('th')" class="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all shadow-sm focus:ring-2 focus:ring-amber-200">TH ไทย</button>
-            <button onclick="setLang('la')" class="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all shadow-sm focus:ring-2 focus:ring-amber-200">LA ລາວ</button>
-            <button onclick="setLang('mm')" class="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all shadow-sm focus:ring-2 focus:ring-amber-200">MM မြန်မာ</button>
+            <button onclick="setLang('th')" class="px-3 py-1 md:px-4 md:py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all text-sm md:text-base">TH ไทย</button>
+            <button onclick="setLang('la')" class="px-3 py-1 md:px-4 md:py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all text-sm md:text-base">LA ລາວ</button>
+            <button onclick="setLang('mm')" class="px-3 py-1 md:px-4 md:py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 hover:border-amber-500 hover:text-amber-600 font-bold transition-all text-sm md:text-base">MM မြန်မာ</button>
         </div>
 
         <!-- เมนูหลัก -->
         <div id="home-view" class="space-y-4">
-            <h2 data-i18n="title" class="font-bold text-center mb-6 text-2xl text-amber-600">เช็คสต็อกร้านชามโปรด</h2>
+            <h2 data-i18n="title" class="font-bold text-center mb-6 text-2xl text-amber-600">ระบบสต็อกร้านชามโปรด</h2>
+            
+            <!-- สวิตช์เลือกโหมดการทำงาน -->
+            <div class="flex justify-center mb-6 gap-2 bg-gray-100 p-2 rounded-xl shadow-inner">
+                <button id="mode-check" onclick="setMode('check')" class="flex-1 py-3 bg-amber-500 text-white rounded-lg font-bold shadow-md transition-all text-lg border-2 border-transparent">📝 <span data-i18n="modeCheck">ตรวจนับสต็อก</span></button>
+                <button id="mode-receive" onclick="setMode('receive')" class="flex-1 py-3 bg-transparent text-gray-500 rounded-lg font-bold hover:bg-gray-200 transition-all text-lg border-2 border-transparent">📥 <span data-i18n="modeReceive">รับของเข้า</span></button>
+            </div>
+
             <button onclick="openStock('ก๋วยเตี๋ยวหมู')" class="w-full p-5 bg-amber-500 text-white rounded-xl font-bold text-xl shadow-md hover:bg-amber-600 transform hover:scale-[1.02] transition-all flex items-center gap-3">🍜 <span data-i18n="menu1">ก๋วยเตี๋ยวหมู</span></button>
             <button onclick="openStock('ก๋วยเตี๋ยวไก่')" class="w-full p-5 bg-green-600 text-white rounded-xl font-bold text-xl shadow-md hover:bg-green-700 transform hover:scale-[1.02] transition-all flex items-center gap-3">🍲 <span data-i18n="menu2">ก๋วยเตี๋ยวไก่</span></button>
             <button onclick="openStock('อาหารตามสั่ง')" class="w-full p-5 bg-orange-600 text-white rounded-xl font-bold text-xl shadow-md hover:bg-orange-700 transform hover:scale-[1.02] transition-all flex items-center gap-3">🥘 <span data-i18n="menu3">อาหารตามสั่ง</span></button>
             <button onclick="openStock('อุปกรณ์ในร้าน')" class="w-full p-5 bg-blue-600 text-white rounded-xl font-bold text-xl shadow-md hover:bg-blue-700 transform hover:scale-[1.02] transition-all flex items-center gap-3">🔧 <span data-i18n="menu4">อุปกรณ์ในร้าน</span></button>
             
             <div class="pt-4 border-t mt-6 flex flex-col md:flex-row gap-4">
-                <button onclick="showHistory()" class="flex-1 p-4 bg-amber-100 text-amber-800 rounded-xl font-bold text-lg hover:bg-amber-200 transition-all flex items-center justify-center gap-2 shadow-sm">🕒 <span data-i18n="historyBtn">ดูประวัติย้อนหลัง</span></button>
+                <button onclick="showHistory()" class="flex-1 p-4 bg-amber-100 text-amber-800 rounded-xl font-bold text-lg hover:bg-amber-200 transition-all flex items-center justify-center gap-2 shadow-sm">🕒 <span data-i18n="historyBtn">ดูประวัติ / รับเข้า</span></button>
                 <button onclick="openRestock()" class="flex-1 p-4 bg-red-100 text-red-700 rounded-xl font-bold text-lg hover:bg-red-200 transition-all flex items-center justify-center gap-2 shadow-sm">🛒 <span data-i18n="restockBtn">สรุปของต้องซื้อ</span></button>
             </div>
         </div>
 
-        <!-- หน้าเช็คสต็อก -->
+        <!-- หน้าบันทึกข้อมูล (ใช้ร่วมกันทั้ง เช็คสต็อก และ รับของเข้า) -->
         <div id="stock-view" class="hidden">
             <div class="flex items-center mb-6 pb-4 border-b border-amber-100">
                 <button onclick="location.reload()" class="text-amber-600 font-bold flex items-center gap-1 hover:bg-amber-50 px-3 py-2 rounded-lg transition-all">← <span data-i18n="back">กลับ</span></button>
-                <h2 id="stock-page-title" class="text-xl md:text-2xl font-bold text-amber-700 flex-1 text-center pr-16"></h2>
+                <h2 id="stock-page-title" class="text-xl md:text-2xl font-bold flex-1 text-center pr-16"></h2>
             </div>
             
             <div id="stock-alert" class="hidden mb-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl shadow-sm text-center md:text-left text-sm md:text-base"></div>
 
-            <input id="staff-name" type="text" data-i18n-ph="staffPlaceholder" placeholder="กรุณากรอกชื่อผู้เช็คสต็อก" class="w-full p-4 border-2 border-amber-300 rounded-xl mb-6 font-bold text-center text-lg focus:ring-4 focus:ring-amber-100 outline-none">
+            <input id="staff-name" type="text" data-i18n-ph="staffPlaceholder" placeholder="กรุณากรอกชื่อพนักงาน" class="w-full p-4 border-2 border-amber-300 rounded-xl mb-6 font-bold text-center text-lg focus:ring-4 focus:ring-amber-100 outline-none">
             
             <div class="overflow-x-auto bg-amber-50/30 rounded-xl p-2 border border-gray-100">
                 <table class="w-full text-sm border-collapse">
-                    <thead>
-                        <tr class="bg-amber-100 text-amber-900 rounded-t-xl">
-                            <th data-i18n="colItem" class="p-3 text-left w-1/3 rounded-tl-lg font-bold">รายการ</th>
-                            <th data-i18n="colQty" class="p-3 text-center font-bold">จำนวน</th>
-                            <th data-i18n="colUnit" class="p-3 text-center w-1/6 font-bold">หน่วย</th>
-                            <th data-i18n="colNote" class="p-3 text-left w-1/4 rounded-tr-lg font-bold">หมายเหตุ</th>
-                        </tr>
+                    <thead id="stock-table-head">
+                        <!-- หัวตารางจะเปลี่ยนไปตามโหมด -->
                     </thead>
                     <tbody id="items-list"></tbody>
                 </table>
             </div>
-            <button onclick="prepareSave()" class="w-full py-4 mt-6 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-xl shadow-lg transition-all flex justify-center items-center gap-2"><span data-i18n="saveBtn">บันทึกข้อมูล</span></button>
+            <button id="save-main-btn" onclick="prepareSave()" class="w-full py-4 mt-6 text-white rounded-xl font-bold text-xl shadow-lg transition-all flex justify-center items-center gap-2"><span data-i18n="saveBtn">บันทึกข้อมูล</span></button>
         </div>
 
         <!-- หน้าประวัติย้อนหลัง -->
         <div id="history-view" class="hidden">
             <div class="flex items-center mb-6 pb-4 border-b border-amber-100">
                 <button onclick="location.reload()" class="text-amber-600 font-bold flex items-center gap-1 hover:bg-amber-50 px-3 py-2 rounded-lg transition-all">← <span data-i18n="back">กลับ</span></button>
-                <h2 class="text-xl md:text-2xl font-bold text-amber-700 flex-1 text-center pr-16" data-i18n="searchTitle">ค้นหาประวัติย้อนหลัง</h2>
+                <h2 class="text-xl md:text-2xl font-bold text-amber-700 flex-1 text-center pr-16" data-i18n="searchTitle">ประวัติย้อนหลัง</h2>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 bg-gray-50 p-4 rounded-xl border">
-                <input type="date" id="date-picker" onchange="filterHistory()" class="w-full p-3 border rounded-lg text-center font-medium focus:border-amber-400 outline-none">
-                <select id="shop-filter" onchange="filterHistory()" class="w-full p-3 border rounded-lg text-center font-medium focus:border-amber-400 outline-none">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 bg-gray-50 p-4 rounded-xl border">
+                <input type="date" id="date-picker" onchange="filterHistory()" class="w-full p-2 border rounded-lg text-center font-medium focus:border-amber-400 outline-none">
+                <select id="action-filter" onchange="filterHistory()" class="w-full p-2 border rounded-lg text-center font-medium text-blue-700 bg-blue-50 focus:border-amber-400 outline-none">
+                    <option value="" data-i18n="allActions">-- ทุกประเภท --</option>
+                    <option value="เช็คสต็อก">📝 ตรวจนับสต็อก</option>
+                    <option value="รับเข้า">📥 รับของเข้า</option>
+                </select>
+                <select id="shop-filter" onchange="filterHistory()" class="w-full p-2 border rounded-lg text-center font-medium focus:border-amber-400 outline-none">
                     <option value="" data-i18n="allShops">-- ทุกร้าน --</option>
                 </select>
-                <select id="staff-filter" onchange="filterHistory()" class="w-full p-3 border rounded-lg text-center font-medium focus:border-amber-400 outline-none">
-                    <option value="" data-i18n="allStaff">-- ผู้เช็คทุกคน --</option>
+                <select id="staff-filter" onchange="filterHistory()" class="w-full p-2 border rounded-lg text-center font-medium focus:border-amber-400 outline-none">
+                    <option value="" data-i18n="allStaff">-- พนักงานทุกคน --</option>
                 </select>
             </div>
             
@@ -105,7 +111,7 @@
             </div>
             
             <div class="bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-sm md:text-base border border-red-100">
-                💡 <span data-i18n="restockHint">ระบบจะดึงรายการที่สต็อกเหลือน้อยกว่าขั้นต่ำมาแสดง สามารถปรับเพิ่ม/ลดจำนวนที่ต้องการสั่งซื้อได้ตามต้องการ</span>
+                💡 <span data-i18n="restockHint">ระบบจะดึงรายการที่สต็อกเหลือน้อยมาแสดง (คิดยอดคงเหลือ + ยอดรับเข้าล่าสุดให้แล้ว)</span>
             </div>
 
             <div class="overflow-x-auto bg-gray-50 rounded-xl p-2 border border-gray-200 shadow-inner">
@@ -114,8 +120,8 @@
                         <tr class="bg-gray-200 text-gray-800 rounded-t-xl">
                             <th data-i18n="colShop" class="p-3 text-center w-1/6 rounded-tl-lg font-bold">ร้าน</th>
                             <th data-i18n="colItem" class="p-3 text-left w-1/3 font-bold">รายการ</th>
-                            <th data-i18n="colCurrent" class="p-3 text-center font-bold">สต็อกเหลือ</th>
-                            <th data-i18n="colBuy" class="p-3 text-center font-bold">จำนวนที่สั่งซื้อ</th>
+                            <th data-i18n="colCurrent" class="p-3 text-center font-bold">สต็อกมีอยู่</th>
+                            <th data-i18n="colBuy" class="p-3 text-center font-bold">ต้องสั่งซื้อ</th>
                             <th data-i18n="colUnit" class="p-3 text-center w-1/6 rounded-tr-lg font-bold">หน่วย</th>
                         </tr>
                     </thead>
@@ -130,76 +136,69 @@
     <script>
         const i18n = {
             th: {
-                title: "เช็คสต็อกร้านชามโปรด", menu1: "ก๋วยเตี๋ยวหมู", menu2: "ก๋วยเตี๋ยวไก่", menu3: "อาหารตามสั่ง", menu4: "อุปกรณ์ในร้าน",
-                historyBtn: "ดูประวัติย้อนหลัง", back: "กลับ", staffPlaceholder: "กรุณากรอกชื่อผู้เช็คสต็อก",
+                title: "ระบบสต็อกร้านชามโปรด", menu1: "ก๋วยเตี๋ยวหมู", menu2: "ก๋วยเตี๋ยวไก่", menu3: "อาหารตามสั่ง", menu4: "อุปกรณ์ในร้าน",
+                historyBtn: "ดูประวัติ / รับเข้า", back: "กลับ", staffPlaceholder: "กรุณากรอกชื่อพนักงาน",
                 colItem: "รายการ", colQty: "จำนวน", colUnit: "หน่วย", colNote: "หมายเหตุ", saveBtn: "บันทึกข้อมูล",
-                saving: "กำลังดำเนินการ...", searchTitle: "ประวัติย้อนหลัง", allShops: "-- ทุกร้าน --", allStaff: "-- ผู้เช็คทุกคน --",
+                saving: "กำลังดำเนินการ...", searchTitle: "ประวัติย้อนหลัง", allShops: "-- ทุกร้าน --", allStaff: "-- พนักงานทุกคน --",
                 colShop: "ร้าน", colStaff: "ผู้บันทึก", loading: "กำลังโหลดข้อมูล...", noRecord: "ไม่พบรายการ",
-                confirmTitle: "สรุปรายการที่แก้ไข", editBtn: "กลับไปแก้ไข", confirmBtn: "ยืนยันบันทึก", noChange: "ไม่มีการแก้ไขข้อมูล",
+                confirmTitle: "สรุปรายการ", editBtn: "กลับไปแก้ไข", confirmBtn: "ยืนยันบันทึก", noChange: "ไม่พบข้อมูลที่ต้องบันทึก",
                 catOthers: "หมวดหมู่ทั่วไป", noteLabel: "หมายเหตุ",
-                restockBtn: "สรุปของต้องซื้อ", restockTitle: "สรุปรายการของต้องซื้อ", colCurrent: "สต็อกเหลือ", colBuy: "จำนวนที่สั่งซื้อ", 
-                copyListBtn: "📋 คัดลอกใบสั่งซื้อ", restockHint: "ระบบดึงรายการที่สต็อกเหลือน้อยมาแสดง สามารถปรับเพิ่มลดจำนวนที่ต้องการสั่งซื้อได้ตามต้องการ"
+                restockBtn: "สรุปของต้องซื้อ", restockTitle: "สรุปรายการของต้องซื้อ", colCurrent: "สต็อกมีอยู่", colBuy: "ต้องสั่งซื้อ", 
+                copyListBtn: "📋 คัดลอกใบสั่งซื้อ", restockHint: "ระบบดึงรายการที่สต็อกเหลือน้อยมาแสดง (คิดยอดคงเหลือ + ยอดรับเข้าล่าสุดให้อัตโนมัติ)",
+                modeCheck: "ตรวจนับสต็อก", modeReceive: "รับของเข้า", colPrice: "ราคา(บ.)", colAction: "ประเภท", allActions: "-- ทุกประเภท --", qtyAdd: "รับเข้า"
             },
             la: {
-                title: "ກວດສອບສະຕັອກຮ້ານຊາມໂປຣດ", menu1: "ເຝີໝູ", menu2: "ເຝີໄກ່", menu3: "ອາຫານຕາມສັ່ງ", menu4: "ອຸປະກອນໃນຮ້ານ",
-                historyBtn: "ເບິ່ງປະຫວັດ", back: "ກັບຄືນ", staffPlaceholder: "ກະລຸນາໃສ່ຊື່ຜູ້ກວດສະຕັອກ",
+                title: "ລະບົບສະຕັອກຮ້ານຊາມໂປຣດ", menu1: "ເຝີໝູ", menu2: "ເຝີໄກ່", menu3: "ອາຫານຕາມສັ່ງ", menu4: "ອຸປະກອນໃນຮ້ານ",
+                historyBtn: "ເບິ່ງປະຫວັດ", back: "ກັບຄືນ", staffPlaceholder: "ກະລຸນາໃສ່ຊື່ພະນັກງານ",
                 colItem: "ລາຍການ", colQty: "ຈຳນວນ", colUnit: "ຫົວໜ່ວຍ", colNote: "ໝາຍເຫດ", saveBtn: "ບັນທຶກຂໍ້ມູນ",
-                saving: "ກຳລັງດຳເນີນການ...", searchTitle: "ປະຫວັດຍ້ອນຫຼັງ", allShops: "-- ທຸກຮ້ານ --", allStaff: "-- ຜູ້ກວດທຸກຄົນ --",
+                saving: "ກຳລັງດຳເນີນການ...", searchTitle: "ປະຫວັດຍ້ອນຫຼັງ", allShops: "-- ທຸກຮ້ານ --", allStaff: "-- ພະນັກງານ --",
                 colShop: "ຮ້ານ", colStaff: "ຜູ້ບັນທຶກ", loading: "ກຳລັງໂຫຼດຂໍ້ມູນ...", noRecord: "ບໍ່ພົບລາຍການ",
-                confirmTitle: "ສະຫຼຸບລາຍການທີ່ແກ້ໄຂ", editBtn: "ກັບໄປແກ້ໄຂ", confirmBtn: "ຢືນຢັນບັນທຶກ", noChange: "ບໍ່ມີການແກ້ໄຂຂໍ້ມູນ",
+                confirmTitle: "ສະຫຼຸບລາຍການ", editBtn: "ກັບໄປແກ້ໄຂ", confirmBtn: "ຢືນຢັນບັນທຶກ", noChange: "ບໍ່ມີການແກ້ໄຂຂໍ້ມູນ",
                 catOthers: "ໝວດໝູ່ທົ່ວໄປ", noteLabel: "ໝາຍເຫດ",
-                restockBtn: "ສະຫຼຸບເຄື່ອງຕ້ອງຊື້", restockTitle: "ສະຫຼຸບລາຍການເຄື່ອງຕ້ອງຊື້", colCurrent: "ສະຕັອກເຫຼືອ", colBuy: "ຈຳນວນທີ່ສັ່ງຊື້",
-                copyListBtn: "📋 ສຳເນົາໃບສັ່ງຊື້", restockHint: "ສາມາດປັບເພີ່ມ/ຫຼຸດຈຳນວນທີ່ຕ້ອງການສັ່ງຊື້ໄດ້ຕາມຕ້ອງການ"
+                restockBtn: "ສະຫຼຸບເຄື່ອງຕ້ອງຊື້", restockTitle: "ສະຫຼຸບລາຍການເຄື່ອງຕ້ອງຊື້", colCurrent: "ສະຕັອກມີຢູ່", colBuy: "ຈຳນວນທີ່ສັ່ງຊື້",
+                copyListBtn: "📋 ສຳເນົາໃບສັ່ງຊື້", restockHint: "ລະບົບຄຳນວນສະຕັອກຫຼ້າສຸດ + ຍອດຮັບເຂົ້າໃຫ້ແລ້ວ",
+                modeCheck: "ກວດນັບສະຕັອກ", modeReceive: "ຮັບເຄື່ອງເຂົ້າ", colPrice: "ລາຄາ(ບ.)", colAction: "ປະເພດ", allActions: "-- ທຸກປະເພດ --", qtyAdd: "ຮັບເຂົ້າ"
             },
             mm: {
-                title: "စတော့ရှယ်ယာစစ်ဆေးပါ", menu1: "ဝက်သားခေါက်ဆွဲ", menu2: "ကြက်သားခေါက်ဆွဲ", menu3: "မှာယူရန်အစားအစာ", menu4: "ဆိုင်သုံးပစ္စည်းများ",
-                historyBtn: "သမိုင်းကြည့်ပါ", back: "ပြန်သွားရန်", staffPlaceholder: "စစ်ဆေးသူအမည်ထည့်ပါ",
+                title: "စတော့ရှယ်ယာစနစ်", menu1: "ဝက်သားခေါက်ဆွဲ", menu2: "ကြက်သားခေါက်ဆွဲ", menu3: "မှာယူရန်အစားအစာ", menu4: "ဆိုင်သုံးပစ္စည်းများ",
+                historyBtn: "သမိုင်းကြည့်ပါ", back: "ပြန်သွားရန်", staffPlaceholder: "ဝန်ထမ်းအမည်ထည့်ပါ",
                 colItem: "အမည်", colQty: "အရေအတွက်", colUnit: "ယူနစ်", colNote: "မှတ်ချက်", saveBtn: "သိမ်းဆည်းပါ",
                 saving: "လုပ်ဆောင်နေသည်...", searchTitle: "သမိုင်းရှာဖွေပါ", allShops: "-- ဆိုင်အားလုံး --", allStaff: "-- ဝန်ထမ်းအားလုံး --",
                 colShop: "ဆိုင်", colStaff: "မှတ်တမ်းတင်သူ", loading: "ဒေတာကို ဖွင့်နေသည်...", noRecord: "မှတ်တမ်းမတွေ့ပါ",
-                confirmTitle: "ပြင်ဆင်ထားသော စာရင်းအကျဉ်းချုပ်", editBtn: "တည်းဖြတ်ရန် ပြန်သွားပါ", confirmBtn: "အတည်ပြုသိမ်းဆည်းပါ", noChange: "ပြောင်းလဲမှုမရှိပါ",
+                confirmTitle: "စာရင်းအကျဉ်းချုပ်", editBtn: "တည်းဖြတ်ရန် ပြန်သွားပါ", confirmBtn: "အတည်ပြုသိမ်းဆည်းပါ", noChange: "ပြောင်းလဲမှုမရှိပါ",
                 catOthers: "အထွေထွေအမျိုးအစား", noteLabel: "မှတ်ချက်",
                 restockBtn: "ဝယ်ရန်စာရင်း", restockTitle: "ဝယ်ရမည့်ပစ္စည်းများစာရင်း", colCurrent: "လက်ကျန်", colBuy: "ဝယ်မည့်အရေအတွက်",
-                copyListBtn: "📋 စာရင်းကို ကူးယူပါ", restockHint: "ဝယ်ယူလိုသော ပမာဏကို လိုအပ်သလို ပြောင်းလဲနိုင်ပါသည်။"
+                copyListBtn: "📋 စာရင်းကို ကူးယူပါ", restockHint: "နောက်ဆုံးစတော့ခ်ကို အလိုအလျောက် တွက်ချက်ထားသည်။",
+                modeCheck: "စတော့ရှယ်ယာစစ်ဆေးပါ", modeReceive: "ပစ္စည်းလက်ခံပါ", colPrice: "စျေးနှုန်း", colAction: "အမျိုးအစား", allActions: "-- အမျိုးအစားအားလုံး --", qtyAdd: "လက်ခံပါ"
             }
         };
 
         const menuKeys = {
-            'ก๋วยเตี๋ยวหมู': 'menu1',
-            'ก๋วยเตี๋ยวไก่': 'menu2',
-            'อาหารตามสั่ง': 'menu3',
-            'อุปกรณ์ในร้าน': 'menu4'
+            'ก๋วยเตี๋ยวหมู': 'menu1', 'ก๋วยเตี๋ยวไก่': 'menu2', 'อาหารตามสั่ง': 'menu3', 'อุปกรณ์ในร้าน': 'menu4'
         };
 
         let currentLang = 'th';
         let globalTranslations = {}; 
         let isLoaded = false;
         let pendingDataToSubmit = []; 
+        let currentMode = 'check'; // 'check' หรือ 'receive'
 
         async function getTranslations() {
             if (isLoaded) return;
             try {
                 const res = await fetch(`${SCRIPT_URL}?sheet=Translation`);
                 const data = await res.json();
-                
                 data.slice(1).forEach(row => {
                     const thKey = row[1] ? String(row[1]).trim() : ''; 
                     const unitLa = row[2] ? String(row[2]).trim() : ''; 
                     const unitMm = row[3] ? String(row[3]).trim() : ''; 
                     const itemLa = row[4] ? String(row[4]).trim() : ''; 
                     const itemMm = row[5] ? String(row[5]).trim() : ''; 
-                    
-                    if (thKey) {
-                        globalTranslations[thKey] = { 
-                            la: itemLa || unitLa || thKey, 
-                            mm: itemMm || unitMm || thKey 
-                        };
-                    }
+                    if (thKey) globalTranslations[thKey] = { la: itemLa || unitLa || thKey, mm: itemMm || unitMm || thKey };
                 });
                 isLoaded = true;
             } catch (e) { console.error("Failed to load translations", e); }
         }
-        
         getTranslations();
 
         function setLang(lang) {
@@ -215,19 +214,21 @@
             document.querySelectorAll('.dyn-text').forEach(el => {
                 el.innerText = el.getAttribute('data-' + lang) || el.getAttribute('data-th');
             });
-            
-            const alertEl = document.getElementById('stock-alert');
-            if (!alertEl.classList.contains('hidden')) {
-                const staff = alertEl.getAttribute('data-staff') || '';
-                let msg = '';
-                if(lang === 'la') msg = `⚠️ ມື້ນີ້ມີການກວດສະຕັອກໄປແລ້ວ ຫຼ້າສຸດໂດຍ <b>${staff}</b>`;
-                else if(lang === 'mm') msg = `⚠️ ယနေ့ စတော့ရှယ်ယာစစ်ဆေးပြီးပါပြီ၊ နောက်ဆုံးစစ်ဆေးသူ <b>${staff}</b>`;
-                else msg = `⚠️ วันนี้มีการเช็คสต็อกไปแล้ว ล่าสุดโดย <b>${staff}</b>`;
-                alertEl.innerHTML = msg;
-            }
+            if(!document.getElementById('history-view').classList.contains('hidden')) filterHistory();
+        }
 
-            if(!document.getElementById('history-view').classList.contains('hidden')){
-                filterHistory();
+        // จัดการโหมด เช็คสต็อก vs รับของเข้า
+        function setMode(mode) {
+            currentMode = mode;
+            const btnCheck = document.getElementById('mode-check');
+            const btnReceive = document.getElementById('mode-receive');
+            
+            if(mode === 'check') {
+                btnCheck.className = "flex-1 py-3 bg-amber-500 text-white rounded-lg font-bold shadow-md transition-all text-lg border-2 border-transparent";
+                btnReceive.className = "flex-1 py-3 bg-transparent text-gray-500 rounded-lg font-bold hover:bg-gray-200 transition-all text-lg border-2 border-transparent";
+            } else {
+                btnReceive.className = "flex-1 py-3 bg-blue-600 text-white rounded-lg font-bold shadow-md transition-all text-lg border-2 border-transparent";
+                btnCheck.className = "flex-1 py-3 bg-transparent text-gray-500 rounded-lg font-bold hover:bg-gray-200 transition-all text-lg border-2 border-transparent";
             }
         }
 
@@ -237,20 +238,42 @@
             currentShop = sheet;
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('stock-view').classList.remove('hidden');
-            
             document.getElementById('stock-alert').classList.add('hidden');
             document.getElementById('staff-name').value = '';
 
+            // ตกแต่งสีหัวเว็บและปุ่มบันทึกตามโหมด
+            const titleEl = document.getElementById('stock-page-title');
+            const saveBtn = document.getElementById('save-main-btn');
             const mKey = menuKeys[sheet];
-            const titleLa = i18n.la[mKey] || sheet;
-            const titleMm = i18n.mm[mKey] || sheet;
-            document.getElementById('stock-page-title').innerHTML = `<span class="dyn-text" data-th="${sheet}" data-la="${titleLa}" data-mm="${titleMm}">${i18n[currentLang][mKey] || sheet}</span>`;
+            
+            let modeTitle = currentMode === 'check' ? `📝 ${i18n[currentLang].modeCheck} - ` : `📥 ${i18n[currentLang].modeReceive} - `;
+            titleEl.innerHTML = `<span class="text-${currentMode==='check'?'amber':'blue'}-700">${modeTitle}<span class="dyn-text" data-th="${sheet}" data-la="${i18n.la[mKey]||sheet}" data-mm="${i18n.mm[mKey]||sheet}">${i18n[currentLang][mKey] || sheet}</span></span>`;
+            
+            saveBtn.className = `w-full py-4 mt-6 text-white rounded-xl font-bold text-xl shadow-lg transition-all flex justify-center items-center gap-2 ${currentMode==='check' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'}`;
+
+            // ปรับหัวตาราง
+            if(currentMode === 'check') {
+                document.getElementById('stock-table-head').innerHTML = `
+                    <tr class="bg-amber-100 text-amber-900 rounded-t-xl">
+                        <th data-i18n="colItem" class="p-3 text-left w-1/3 rounded-tl-lg font-bold">${i18n[currentLang].colItem}</th>
+                        <th data-i18n="colQty" class="p-3 text-center font-bold">${i18n[currentLang].colQty}</th>
+                        <th data-i18n="colUnit" class="p-3 text-center w-1/6 font-bold">${i18n[currentLang].colUnit}</th>
+                        <th data-i18n="colNote" class="p-3 text-left w-1/4 rounded-tr-lg font-bold">${i18n[currentLang].colNote}</th>
+                    </tr>`;
+            } else {
+                document.getElementById('stock-table-head').innerHTML = `
+                    <tr class="bg-blue-100 text-blue-900 rounded-t-xl">
+                        <th data-i18n="colItem" class="p-3 text-left w-1/3 rounded-tl-lg font-bold">${i18n[currentLang].colItem}</th>
+                        <th data-i18n="qtyAdd" class="p-3 text-center font-bold w-1/4">${i18n[currentLang].qtyAdd}</th>
+                        <th data-i18n="colPrice" class="p-3 text-center font-bold w-1/5">${i18n[currentLang].colPrice}</th>
+                        <th data-i18n="colNote" class="p-3 text-left w-1/4 rounded-tr-lg font-bold">${i18n[currentLang].colNote}</th>
+                    </tr>`;
+            }
 
             document.getElementById('items-list').innerHTML = `<tr><td colspan="4" class="text-center p-8 text-gray-400 font-bold text-lg"><span class="animate-pulse">${i18n[currentLang].loading}</span></td></tr>`;
             
             try {
                 await getTranslations(); 
-                
                 const [resTemplate, resHist] = await Promise.all([
                     fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`),
                     fetch(`${SCRIPT_URL}?sheet=บันทึกสต๊อก`)
@@ -258,37 +281,34 @@
                 
                 const templateData = await resTemplate.json();
                 const histDataFull = await resHist.json();
-                
                 const validHist = histDataFull.slice(1).filter(r => r[0] && String(r[0]).trim() !== '');
                 
                 const d = new Date();
                 const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
                 const todayVariations = [`${y}-${m}-${day}`, `${day}/${m}/${y}`, `${m}/${day}/${y}`, `${day}/${m}/${y+543}`];
                 
-                const todaysHistory = validHist.filter(r => r[2] === sheet && todayVariations.some(v => String(r[0]).includes(v)));
-                
+                // ถ้ารับของเข้า ไม่ต้องเอาค่าเก่ามาโชว์ (ให้เป็น 0 ตลอด)
                 const latestToday = {};
                 let lastStaff = "";
                 
-                todaysHistory.forEach(r => {
-                    let itemName = String(r[4]).trim();
-                    latestToday[itemName] = {
-                        qty: parseFloat(r[5]) || 0,
-                        note: r[7] || '',
-                    };
-                    lastStaff = r[1] || ''; 
-                });
+                if (currentMode === 'check') {
+                    // กรองเฉพาะประวัติ "เช็คสต็อก" ของวันนี้
+                    const todaysHistory = validHist.filter(r => r[2] === sheet && (!r[3] || r[3] === 'เช็คสต็อก') && todayVariations.some(v => String(r[0]).includes(v)));
+                    todaysHistory.forEach(r => {
+                        let itemName = String(r[5] ? r[5] : r[4]).trim();
+                        latestToday[itemName] = { qty: parseFloat(r[6]) || 0, note: r[9] || '' };
+                        lastStaff = r[1] || ''; 
+                    });
 
-                const alertEl = document.getElementById('stock-alert');
-                if (Object.keys(latestToday).length > 0) {
-                    alertEl.setAttribute('data-staff', lastStaff);
-                    alertEl.classList.remove('hidden');
-                    let msg = '';
-                    if(currentLang === 'la') msg = `⚠️ ມື້ນີ້ມີການກວດສະຕັອກໄປແລ້ວ ຫຼ້າສຸດໂດຍ <b>${lastStaff}</b>`;
-                    else if(currentLang === 'mm') msg = `⚠️ ယနေ့ စတော့ရှယ်ယာစစ်ဆေးပြီးပါပြီ၊ နောက်ဆုံးစစ်ဆေးသူ <b>${lastStaff}</b>`;
-                    else msg = `⚠️ วันนี้มีการเช็คสต็อกไปแล้ว ล่าสุดโดย <b>${lastStaff}</b>`;
-                    alertEl.innerHTML = msg;
-                    document.getElementById('staff-name').value = lastStaff; 
+                    if (Object.keys(latestToday).length > 0) {
+                        const alertEl = document.getElementById('stock-alert');
+                        alertEl.classList.remove('hidden');
+                        let msg = currentLang === 'la' ? `⚠️ ມື້ນີ້ມີການກວດສະຕັອກໄປແລ້ວ ຫຼ້າສຸດໂດຍ <b>${lastStaff}</b>` : 
+                                  currentLang === 'mm' ? `⚠️ ယနေ့ စတော့ရှယ်ယာစစ်ဆေးပြီးပါပြီ၊ နောက်ဆုံးစစ်ဆေးသူ <b>${lastStaff}</b>` : 
+                                  `⚠️ วันนี้มีการเช็คสต็อกไปแล้ว ล่าสุดโดย <b>${lastStaff}</b>`;
+                        alertEl.innerHTML = msg;
+                        document.getElementById('staff-name').value = lastStaff; 
+                    }
                 }
                 
                 let currentCategory = "";
@@ -301,14 +321,14 @@
                         
                         if (catTh !== currentCategory) {
                             currentCategory = catTh;
-                            
                             let cLa = globalTranslations[catTh] ? globalTranslations[catTh].la : (catTh === i18n.th.catOthers ? i18n.la.catOthers : catTh);
                             let cMm = globalTranslations[catTh] ? globalTranslations[catTh].mm : (catTh === i18n.th.catOthers ? i18n.mm.catOthers : catTh);
                             let displayCat = currentLang === 'la' ? cLa : currentLang === 'mm' ? cMm : catTh;
                             
+                            let bgClass = currentMode === 'check' ? 'bg-amber-100/60 border-amber-200 text-amber-800' : 'bg-blue-100/60 border-blue-200 text-blue-800';
                             htmlContent += `
-                                <tr class="bg-amber-100/60 border-y-2 border-amber-200">
-                                    <td colspan="4" class="p-3 font-bold text-amber-800">
+                                <tr class="${bgClass} border-y-2">
+                                    <td colspan="4" class="p-3 font-bold">
                                         <span class="dyn-text" data-th="${catTh}" data-la="${cLa}" data-mm="${cMm}">📁 ${displayCat}</span>
                                     </td>
                                 </tr>
@@ -327,31 +347,40 @@
                         
                         const unitTh = r[2] ? String(r[2]).trim() : '';
                         const unit = {
-                            th: unitTh,
-                            la: globalTranslations[unitTh] ? globalTranslations[unitTh].la : unitTh,
-                            mm: globalTranslations[unitTh] ? globalTranslations[unitTh].mm : unitTh
+                            th: unitTh, la: globalTranslations[unitTh] ? globalTranslations[unitTh].la : unitTh, mm: globalTranslations[unitTh] ? globalTranslations[unitTh].mm : unitTh
                         };
 
                         const prevData = latestToday[thName] || { qty: 0.0, note: '' };
-                        const qtyVal = prevData.qty.toFixed(1);
-                        const noteVal = prevData.note.replace(/"/g, '&quot;');
+                        const qtyVal = currentMode === 'check' ? prevData.qty.toFixed(1) : "0.0";
+                        const noteVal = currentMode === 'check' ? prevData.note.replace(/"/g, '&quot;') : "";
+                        
+                        // สร้างช่องกรอกตามโหมด (ถ้า Check มีช่องหน่วย, ถ้ารับเข้า มีช่องหน่วยบวกกับชื่อ และมีช่องราคา)
+                        let middleCol = "";
+                        if (currentMode === 'check') {
+                            middleCol = `<td class="p-3 text-center text-gray-500 text-sm font-medium"><span class="dyn-text" data-th="${unit.th}" data-la="${unit.la}" data-mm="${unit.mm}">${unit[currentLang]}</span></td>`;
+                        } else {
+                            middleCol = `<td class="p-2"><input type="number" min="0" class="w-full p-2 border border-blue-200 rounded-lg focus:border-blue-500 outline-none price-input text-center text-blue-700 font-bold bg-white" placeholder="0"></td>`;
+                        }
+
+                        let itemNameDisplay = `<span class="dyn-text font-bold text-gray-800" data-th="${item.th}" data-la="${item.la}" data-mm="${item.mm}">${item[currentLang]}</span>`;
+                        if (currentMode === 'receive') {
+                            itemNameDisplay += `<div class="text-xs text-gray-500 mt-1 dyn-text" data-th="${unit.th}" data-la="${unit.la}" data-mm="${unit.mm}">(${unit[currentLang]})</div>`;
+                        }
+
+                        let borderColor = currentMode === 'check' ? 'border-gray-200 focus:border-amber-400' : 'border-blue-200 focus:border-blue-500';
 
                         htmlContent += `
-                        <tr class="border-b border-gray-100 hover:bg-white transition-colors">
-                            <td class="p-3 font-medium text-gray-800">
-                                <span class="dyn-text" data-th="${item.th}" data-la="${item.la}" data-mm="${item.mm}">${item[currentLang]}</span>
-                            </td>
+                        <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                            <td class="p-3 font-medium text-gray-800">${itemNameDisplay}</td>
                             <td class="p-3">
                                 <div class="flex items-center justify-center gap-1 md:gap-2">
-                                    <button onclick="adj(this, -1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">-</button>
-                                    <input type="number" min="0" oninput="if(this.value < 0) this.value = 0; checkRowEdit(this);" class="w-16 md:w-20 h-10 text-center border-2 border-gray-200 rounded-lg font-bold text-lg qty-input focus:border-amber-400 outline-none transition-colors text-gray-800" value="${qtyVal}" step="0.1" data-orig="${qtyVal}" data-name="${item.th}" data-unit="${unit.th}" data-category="${catTh}">
-                                    <button onclick="adj(this, 1)" class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-green-50 hover:text-green-600 hover:border-green-300 border border-gray-200 transition-all text-xl leading-none flex items-center justify-center shadow-sm">+</button>
+                                    <button onclick="adj(this, -1)" class="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-red-50 hover:text-red-600 border border-gray-200 shadow-sm">-</button>
+                                    <input type="number" min="0" oninput="if(this.value < 0) this.value = 0; checkRowEdit(this);" class="w-14 md:w-20 h-10 text-center border-2 ${borderColor} rounded-lg font-bold text-lg qty-input outline-none transition-colors text-gray-800" value="${qtyVal}" step="0.1" data-orig="${qtyVal}" data-name="${item.th}" data-unit="${unit.th}" data-category="${catTh}">
+                                    <button onclick="adj(this, 1)" class="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-green-50 hover:text-green-600 border border-gray-200 shadow-sm">+</button>
                                 </div>
                             </td>
-                            <td class="p-3 text-center text-gray-500 text-sm font-medium">
-                                <span class="dyn-text" data-th="${unit.th}" data-la="${unit.la}" data-mm="${unit.mm}">${unit[currentLang]}</span>
-                            </td>
-                            <td class="p-3"><input type="text" oninput="checkRowEdit(this);" class="w-full p-2 border border-gray-200 rounded-lg focus:border-amber-400 outline-none note-input bg-gray-50 focus:bg-white transition-colors text-gray-800" value="${noteVal}" data-orig-note="${noteVal}"></td>
+                            ${middleCol}
+                            <td class="p-3"><input type="text" oninput="checkRowEdit(this);" class="w-full p-2 border ${borderColor} rounded-lg outline-none note-input bg-gray-50 focus:bg-white transition-colors text-gray-800" value="${noteVal}" data-orig-note="${noteVal}"></td>
                         </tr>
                         `;
                     });
@@ -364,6 +393,8 @@
         }
 
         function checkRowEdit(element) {
+            if (currentMode === 'receive') return; // รับของเข้าไม่ต้องแดง
+
             let tr = element.closest('tr');
             let qtyInput = tr.querySelector('.qty-input');
             let noteInput = tr.querySelector('.note-input');
@@ -375,16 +406,16 @@
             let currentNote = noteInput.value.trim();
             
             if (currentQty !== origQty) {
-                qtyInput.classList.remove('text-gray-800');
                 qtyInput.classList.add('text-red-600');
+                qtyInput.classList.remove('text-gray-800');
             } else {
                 qtyInput.classList.remove('text-red-600');
                 qtyInput.classList.add('text-gray-800');
             }
             
             if (currentNote !== origNote) {
-                noteInput.classList.remove('text-gray-800');
                 noteInput.classList.add('text-red-600');
+                noteInput.classList.remove('text-gray-800');
             } else {
                 noteInput.classList.remove('text-red-600');
                 noteInput.classList.add('text-gray-800');
@@ -423,92 +454,91 @@
 
             const rows = document.querySelectorAll('#items-list tr');
             let hasError = false;
+            pendingDataToSubmit = [];
+            let htmlList = '';
 
             for (let r of rows) {
                 const qtyInput = r.querySelector('.qty-input');
                 const noteInput = r.querySelector('.note-input');
-                if (qtyInput && noteInput) {
-                    let q = parseFloat(qtyInput.value) || 0;
-                    let note = noteInput.value.trim();
-                    
+                if (!qtyInput || !noteInput) continue;
+
+                let q = parseFloat(qtyInput.value) || 0;
+                let note = noteInput.value.trim();
+                let name = qtyInput.dataset.name;
+                let unit = qtyInput.dataset.unit;
+                let cat = qtyInput.dataset.category;
+
+                let iLa = globalTranslations[name] ? globalTranslations[name].la : name;
+                let iMm = globalTranslations[name] ? globalTranslations[name].mm : name;
+                let dName = currentLang === 'la' ? iLa : currentLang === 'mm' ? iMm : name;
+
+                let uLa = globalTranslations[unit] ? globalTranslations[unit].la : unit;
+                let uMm = globalTranslations[unit] ? globalTranslations[unit].mm : unit;
+                let dUnit = currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unit;
+
+                if (currentMode === 'check') {
+                    let orig = parseFloat(qtyInput.dataset.orig) || 0;
+                    let origNote = qtyInput.dataset.origNote || '';
+
                     if (q === 0 && note === '') {
-                        let name = qtyInput.dataset.name;
-                        let iLa = globalTranslations[name] ? globalTranslations[name].la : name;
-                        let iMm = globalTranslations[name] ? globalTranslations[name].mm : name;
-                        let dName = currentLang === 'la' ? iLa : currentLang === 'mm' ? iMm : name;
-                        
-                        let msg = '';
-                        if(currentLang === 'la') msg = `⚠️ ກະລຸນາໃສ່ໝາຍເຫດສຳລັບລາຍການທີ່ເປັນ 0\n(ເຊັ່ນ: "ໝົດ") -> ${dName}`;
-                        else if(currentLang === 'mm') msg = `⚠️ 0 ဖြစ်နေသော စာရင်းများအတွက် မှတ်ချက်ထည့်ပါ\n(ဥပမာ "ကုန်ပြီ") -> ${dName}`;
-                        else msg = `⚠️ กรุณาใส่หมายเหตุสำหรับรายการที่เป็น 0\n(เช่น "หมด") -> ${dName}`;
-                        
-                        alert(msg);
+                        alert(`⚠️ กรุณาใส่หมายเหตุสำหรับรายการที่เป็น 0\n(เช่น "หมด") -> ${dName}`);
                         noteInput.focus();
                         noteInput.classList.add('ring-2', 'ring-red-500', 'bg-red-50');
                         setTimeout(() => noteInput.classList.remove('ring-2', 'ring-red-500', 'bg-red-50'), 3000);
                         hasError = true;
                         break;
                     }
-                }
-            }
-            
-            if (hasError) return;
 
-            pendingDataToSubmit = [];
-            let htmlList = '';
-            const tNoteLabel = i18n[currentLang].noteLabel;
-            
-            rows.forEach(r => {
-                const qtyInput = r.querySelector('.qty-input');
-                const noteInput = r.querySelector('.note-input');
-                if (qtyInput && noteInput) {
-                    let q = parseFloat(qtyInput.value) || 0;
-                    let orig = parseFloat(qtyInput.dataset.orig) || 0;
-                    let note = noteInput.value.trim();
-                    let origNote = noteInput.dataset.origNote || '';
-                    
                     if(q !== orig || note !== origNote) {
-                        let name = qtyInput.dataset.name;
-                        let unit = qtyInput.dataset.unit;
-                        let cat = qtyInput.dataset.category;
-                        
-                        const iLa = globalTranslations[name] ? globalTranslations[name].la : name;
-                        const iMm = globalTranslations[name] ? globalTranslations[name].mm : name;
-                        const dName = currentLang === 'la' ? iLa : currentLang === 'mm' ? iMm : name;
-
-                        const uLa = globalTranslations[unit] ? globalTranslations[unit].la : unit;
-                        const uMm = globalTranslations[unit] ? globalTranslations[unit].mm : unit;
-                        const dUnit = currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unit;
-
                         pendingDataToSubmit.push({ 
-                            checked_by: staff, station: currentShop, category: cat, 
-                            item_name: name, 
-                            quantity: q, unit: unit, note: note 
+                            action_type: 'เช็คสต็อก', checked_by: staff, station: currentShop, category: cat, 
+                            item_name: name, quantity: q, unit: unit, price: "", note: note 
                         });
                         
-                        let noteDisplay = note ? `<div class="text-xs text-amber-600 mt-1 bg-amber-50 inline-block px-2 py-1 rounded">📝 ${tNoteLabel}: ${note}</div>` : '';
-                        let qtyColor = q !== orig ? 'text-red-600' : 'text-green-600';
-
+                        let noteDisplay = note ? `<div class="text-xs text-amber-600 mt-1 bg-amber-50 inline-block px-2 py-1 rounded">📝 ${note}</div>` : '';
                         htmlList += `
-                            <div class="flex justify-between items-center border-b border-gray-200 py-3 last:border-0 last:pb-0">
-                                <div class="flex flex-col">
-                                    <span class="font-medium text-gray-700">${dName}</span>
-                                    ${noteDisplay}
-                                </div>
+                            <div class="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
+                                <div class="flex flex-col"><span class="font-medium">${dName}</span>${noteDisplay}</div>
                                 <div class="text-right">
                                     <span class="text-gray-400 line-through text-xs mr-1">${orig}</span>
-                                    <span class="font-bold ${qtyColor} text-base">${q} <span class="text-xs font-normal text-gray-600">${dUnit}</span></span>
+                                    <span class="font-bold text-red-600 text-base">${q} <span class="text-xs text-gray-600">${dUnit}</span></span>
+                                </div>
+                            </div>`;
+                    }
+                } else if (currentMode === 'receive') {
+                    if (q > 0) {
+                        const priceInput = r.querySelector('.price-input');
+                        let p = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
+                        
+                        pendingDataToSubmit.push({ 
+                            action_type: 'รับเข้า', checked_by: staff, station: currentShop, category: cat, 
+                            item_name: name, quantity: q, unit: unit, price: p, note: note 
+                        });
+                        
+                        let noteDisplay = note ? `<div class="text-xs text-blue-600 mt-1 bg-blue-50 inline-block px-2 py-1 rounded">📝 ${note}</div>` : '';
+                        let priceDisplay = p > 0 ? `<div class="text-sm font-bold text-green-600 mt-1">💰 ${p} บ.</div>` : '';
+                        htmlList += `
+                            <div class="flex justify-between items-center border-b border-blue-100 pb-2 last:border-0 last:pb-0 pt-2">
+                                <div class="flex flex-col"><span class="font-medium text-blue-900">${dName}</span>${noteDisplay}</div>
+                                <div class="text-right">
+                                    <span class="font-bold text-blue-600 text-lg">+${q} <span class="text-xs text-gray-500">${dUnit}</span></span>
+                                    ${priceDisplay}
                                 </div>
                             </div>`;
                     }
                 }
-            });
+            }
+            
+            if (hasError) return;
 
             if (pendingDataToSubmit.length === 0) {
                 alert('⚠️ ' + i18n[currentLang].noChange);
                 return;
             }
 
+            document.getElementById('confirm-modal-title').innerText = currentMode === 'check' ? "📝 ยืนยันการนับสต็อก" : "📥 ยืนยันการรับของเข้า";
+            document.getElementById('confirm-modal-title').className = currentMode === 'check' ? "text-xl font-bold text-amber-700 mb-4 text-center" : "text-xl font-bold text-blue-700 mb-4 text-center";
+            
             document.getElementById('confirm-list').innerHTML = htmlList;
             document.getElementById('confirm-modal').classList.remove('hidden');
         }
@@ -538,6 +568,7 @@
             }
         }
 
+        // ================= สรุปของต้องซื้อ (คำนวณแบบ Perpetual) =================
         async function openRestock() {
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('restock-view').classList.remove('hidden');
@@ -553,12 +584,21 @@
                 const histDataFull = results.pop(); 
                 const validHist = histDataFull.slice(1).filter(r => r[0] && String(r[0]).trim() !== '');
 
+                // 🌟 หัวใจสำคัญ: คำนวณสต็อกสดๆ (Physical Count ล่าสุด + ของรับเข้าหลังจากนั้น)
                 const currentStockMap = {};
                 validHist.forEach(r => {
-                    let item = r[4] ? String(r[4]).trim() : (r[2] ? String(r[2]).trim() : '');
-                    let qty = parseFloat(r[5]);
-                    if (isNaN(qty)) qty = parseFloat(r[3]) || 0;
-                    currentStockMap[item] = qty; 
+                    let action = r[3] || 'เช็คสต็อก'; // ถ้าย้อนหลังไปข้อมูลเก่าจะถือว่าเป็น เช็คสต็อก
+                    let item = r[5] ? String(r[5]).trim() : (r[4] ? String(r[4]).trim() : '');
+                    let qty = parseFloat(r[6]);
+                    if (isNaN(qty)) qty = parseFloat(r[5]) || 0; // เผื่อโครงสร้างเก่า
+                    
+                    if (!currentStockMap[item]) currentStockMap[item] = 0;
+                    
+                    if (action === 'รับเข้า') {
+                        currentStockMap[item] += qty; // ถ้ารับเข้าให้บวกเพิ่ม
+                    } else {
+                        currentStockMap[item] = qty;  // ถ้าเช็คสต็อก(นับหน้าตู้) ให้รีเซ็ตค่ายึดตามที่นับได้ล่าสุด
+                    }
                 });
 
                 let htmlContent = '';
@@ -595,8 +635,7 @@
                                 let uMm = globalTranslations[unitTh] ? globalTranslations[unitTh].mm : unitTh;
                                 let displayUnit = currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unitTh;
 
-                                // ปรับให้แสดงแค่ตัวเลขสต็อกเหลือ (เอาหน่วยออกเพราะมีคอลัมน์หน่วยแยกแล้ว)
-                                let currentQtyDisplay = currentQty <= 0 ? `<span class="text-red-600 font-bold">0</span>` : `${currentQty}`;
+                                let currentQtyDisplay = currentQty <= 0 ? `<span class="text-red-600 font-bold">0</span>` : `<span class="font-medium">${currentQty.toFixed(1)}</span>`;
 
                                 htmlContent += `
                                 <tr class="border-b border-gray-100 hover:bg-white transition-colors">
@@ -651,7 +690,6 @@
                 alert("ไม่มีรายการที่ต้องซื้อครับ");
                 return;
             }
-            
             text += "\nขอบคุณครับ 🙏";
             
             navigator.clipboard.writeText(text).then(() => {
@@ -661,6 +699,7 @@
             });
         }
 
+        // ================= ประวัติย้อนหลัง =================
         async function showHistory() {
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('history-view').classList.remove('hidden');
@@ -694,21 +733,13 @@
                 return;
             }
             
-            const uniqueMap = new Map();
-            window.histData.slice(1).forEach(r => {
-                let rawDate = String(r[0]);
-                let dateKey = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
-                let shop = r[2] || '';
-                let item = r[4] || '';
-                let key = `${dateKey}_${shop}_${item}`;
-                uniqueMap.set(key, r);
-            });
-            
-            let filtered = Array.from(uniqueMap.values());
+            // ในโหมดประวัติ เราจะไม่รวมรายการแล้ว แต่จะแสดงทุกรายการที่กรองไว้
+            let filtered = window.histData.slice(1);
 
             const dateVal = document.getElementById('date-picker').value;
             const shopVal = document.getElementById('shop-filter').value;
             const staffVal = document.getElementById('staff-filter').value;
+            const actionVal = document.getElementById('action-filter').value;
 
             if (dateVal) {
                 const [y, m, d] = dateVal.split('-');
@@ -716,8 +747,34 @@
                 const dateVariations = [ dateVal, `${d}/${m}/${y}`, `${m}/${d}/${y}`, `${d}/${m}/${yThai}` ];
                 filtered = filtered.filter(r => r[0] && dateVariations.some(format => String(r[0]).includes(format)));
             }
+            
             if (shopVal) filtered = filtered.filter(r => r[2] === shopVal);
             if (staffVal) filtered = filtered.filter(r => r[1] === staffVal);
+            if (actionVal) {
+                // ถ้ากรองเช็คสต็อก ให้รวมพวกที่ค่าว่าง(ข้อมูลเก่า) ด้วย
+                if(actionVal === 'เช็คสต็อก') filtered = filtered.filter(r => !r[3] || r[3] === 'เช็คสต็อก');
+                else filtered = filtered.filter(r => r[3] === actionVal);
+            }
+
+            // ถ้ากรองแค่ "เช็คสต็อก" (หรือไม่ได้กรองประเภท) แต่ไม่ได้ระบุวันที่ ระบบจะเอาเฉพาะรายการล่าสุดมาโชว์เพื่อไม่ให้รก
+            if (!actionVal || actionVal === 'เช็คสต็อก') {
+                 const uniqueMap = new Map();
+                 filtered.forEach(r => {
+                     if(!r[3] || r[3] === 'เช็คสต็อก') {
+                        let rawDate = String(r[0]);
+                        let dateKey = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
+                        let shop = r[2] || '';
+                        let item = r[5] ? r[5] : (r[4]||'');
+                        uniqueMap.set(`${dateKey}_${shop}_${item}_check`, r);
+                     }
+                 });
+                 // เอา รับของเข้า มารวมกลับเข้าไป
+                 let receives = filtered.filter(r => r[3] === 'รับเข้า');
+                 filtered = Array.from(uniqueMap.values()).concat(receives);
+            }
+
+            // เรียงลำดับตามเวลาใหม่สุดอยู่บน
+            filtered.sort((a,b) => new Date(b[0]) - new Date(a[0]));
 
             if (filtered.length > 0) {
                 document.getElementById('history-data').innerHTML = `
@@ -725,36 +782,53 @@
                         <table class="w-full text-sm border-collapse bg-white">
                             <thead>
                                 <tr class="bg-gray-100 text-gray-700">
-                                    <th class="border-b p-3 text-center w-1/4 font-bold" data-i18n="colShop">${i18n[currentLang].colShop}</th>
-                                    <th class="border-b p-3 text-center w-1/4 font-bold" data-i18n="colStaff">${i18n[currentLang].colStaff}</th>
+                                    <th class="border-b p-3 text-center w-1/5 font-bold">เวลา / ร้าน</th>
                                     <th class="border-b p-3 text-left font-bold" data-i18n="colItem">${i18n[currentLang].colItem}</th>
-                                    <th class="border-b p-3 text-center font-bold" data-i18n="colQty">${i18n[currentLang].colQty}</th>
+                                    <th class="border-b p-3 text-center font-bold" data-i18n="colAction">${i18n[currentLang].colAction}</th>
+                                    <th class="border-b p-3 text-right font-bold" data-i18n="colQty">${i18n[currentLang].colQty}</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${filtered.reverse().map((r, index) => {
-                                    const itemTh = r[4] ? String(r[4]).trim() : (r[2] ? String(r[2]).trim() : '-');
-                                    const unitTh = r[6] ? String(r[6]).trim() : (r[4] ? String(r[4]).trim() : '');
-                                    
+                                ${filtered.map((r, index) => {
+                                    // อ้างอิง Index 11 คอลัมน์: 0=Date, 1=Staff, 2=Shop, 3=Action, 4=Cat, 5=Item, 6=Qty, 7=Unit, 8=Price, 9=Note, 10=TransNote
+                                    let action = r[3] || 'เช็คสต็อก';
+                                    let itemTh = r[5] ? String(r[5]).trim() : (r[4] ? String(r[4]).trim() : '-');
+                                    let unitTh = r[7] ? String(r[7]).trim() : (r[6] ? String(r[6]).trim() : ''); // รองรับแบบเก่า
+                                    let qtyVal = parseFloat(r[6]);
+                                    if (isNaN(qtyVal)) qtyVal = parseFloat(r[5]) || 0;
+                                    let priceVal = parseFloat(r[8]) || 0;
+                                    let noteVal = r[10] ? r[10] : (r[9] ? r[9] : '');
+
+                                    let rawDate = new Date(r[0]);
+                                    let timeStr = isNaN(rawDate) ? String(r[0]).split(' ')[1] || '' : rawDate.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'});
+
                                     const iLa = globalTranslations[itemTh] ? globalTranslations[itemTh].la : itemTh;
                                     const iMm = globalTranslations[itemTh] ? globalTranslations[itemTh].mm : itemTh;
                                     const uLa = globalTranslations[unitTh] ? globalTranslations[unitTh].la : unitTh;
                                     const uMm = globalTranslations[unitTh] ? globalTranslations[unitTh].mm : unitTh;
 
-                                    let qtyVal = r[5];
-                                    if (qtyVal === undefined || qtyVal === null || String(qtyVal).trim() === '') {
-                                        qtyVal = (r[3] !== undefined && r[3] !== null && !isNaN(r[3]) && String(r[3]).trim() !== '') ? r[3] : '0';
-                                    }
+                                    let badgeColor = action === 'รับเข้า' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-amber-100 text-amber-700 border-amber-300';
                                     
+                                    let valDisplay = action === 'รับเข้า' 
+                                        ? `<div class="font-black text-lg text-blue-600">+${qtyVal} <span class="text-xs font-normal text-gray-500 dyn-text" data-th="${unitTh}" data-la="${uLa}" data-mm="${uMm}">${unitTh}</span></div>
+                                           ${priceVal > 0 ? `<div class="text-xs text-green-600 font-bold mt-1">${priceVal} บ.</div>` : ''}` 
+                                        : `<div class="font-black text-lg text-amber-600">${qtyVal} <span class="text-xs font-normal text-gray-500 dyn-text" data-th="${unitTh}" data-la="${uLa}" data-mm="${uMm}">${unitTh}</span></div>`;
+
                                     return `
                                     <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-amber-50 transition-colors">
-                                        <td class="border-b p-3 text-center font-medium text-amber-700">${r[2] || '-'}</td>
-                                        <td class="border-b p-3 text-center text-gray-700">${r[1] || '-'}</td>
+                                        <td class="border-b p-3 text-center">
+                                            <div class="text-xs text-gray-400 font-bold">${timeStr}</div>
+                                            <div class="font-medium text-gray-800">${r[2] || '-'}</div>
+                                            <div class="text-xs text-gray-500 mt-1">👤 ${r[1] || '-'}</div>
+                                        </td>
                                         <td class="border-b p-3">
                                             <div class="font-bold text-gray-800 dyn-text" data-th="${itemTh}" data-la="${iLa}" data-mm="${iMm}">${currentLang === 'la' ? iLa : currentLang === 'mm' ? iMm : itemTh}</div>
-                                            <div class="text-xs text-gray-500 mt-1">${r[7] ? r[7] : ''}</div>
+                                            <div class="text-xs text-gray-500 mt-1">${noteVal}</div>
                                         </td>
-                                        <td class="border-b p-3 text-center font-black text-lg text-green-600">${qtyVal} <span class="text-xs font-normal text-gray-500 dyn-text" data-th="${unitTh}" data-la="${uLa}" data-mm="${uMm}">${currentLang === 'la' ? uLa : currentLang === 'mm' ? uMm : unitTh}</span></td>
+                                        <td class="border-b p-3 text-center">
+                                            <span class="px-2 py-1 border text-xs rounded-full font-bold ${badgeColor}">${action}</span>
+                                        </td>
+                                        <td class="border-b p-3 text-right pr-4">${valDisplay}</td>
                                     </tr>
                                 `}).join('')}
                             </tbody>
