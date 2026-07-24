@@ -1,0 +1,6 @@
+{
+  "name": "Cham Prod Noodle Shop Inventory",
+  "description": "ระบบสต็อกร้านชามโปรด - Inventory, Stock Counting, Receiving, Restock Calculations & Multi-Language ERP System (TH/LA/MM)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
