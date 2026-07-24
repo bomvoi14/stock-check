@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, KeyRound, X, Check, ShieldAlert, Delete } from 'lucide-react';
-import { verifyPin, isDefaultPin } from '../services/pinService';
+import { verifyPin, isDefaultPin, getStoredPin } from '../services/pinService';
 
 interface PinLockModalProps {
   isOpen: boolean;
@@ -18,30 +18,34 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({
   const [pin, setPin] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [shake, setShake] = useState<boolean>(false);
+  const [targetLength, setTargetLength] = useState<number>(4);
 
   useEffect(() => {
     if (isOpen) {
       setPin('');
       setErrorMsg(null);
       setShake(false);
+      // ตรวจสอบว่ารหัสที่ตั้งไว้ในระบบมีกี่หลัก
+      setTargetLength(getStoredPin().length);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleKeyPress = (num: string) => {
-    if (pin.length < 4) {
+    // กำหนดให้กดได้สูงสุด 12 หลักตามข้อจำกัดของระบบ
+    if (pin.length < 12) {
       const nextPin = pin + num;
       setPin(nextPin);
       setErrorMsg(null);
 
-      // Auto submit on 4th digit
-      if (nextPin.length === 4) {
+      // ตรวจสอบรหัสผ่านอัตโนมัติเมื่อกดครบจำนวนหลักที่ตั้งไว้
+      if (nextPin.length === targetLength) {
         if (verifyPin(nextPin)) {
           onSuccess();
         } else {
           setShake(true);
-          setErrorMsg('รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+          setErrorMsg('รหัส PIN ไม่ถูกต้อง');
           setTimeout(() => {
             setPin('');
             setShake(false);
@@ -77,22 +81,21 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({
           <div className="w-14 h-14 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-amber-400/30 shadow-inner">
             <Lock className="w-7 h-7" />
           </div>
-
-          <h3 className="text-lg font-black tracking-tight">ยืนยันสิทธิ์ผู้จัดการ</h3>
+          <h3 className="text-lg font-black tracking-tight">ยืนยันตัวตน</h3>
           <p className="text-xs text-amber-200/80 font-medium mt-1">
-            ใส่รหัส PIN เพื่อเข้าใช้งานเมนู <span className="font-bold text-amber-300 underline">{targetTabName}</span>
+            กรุณาใส่รหัส PIN เพื่อเข้าสู่ <span className="font-bold text-amber-300 underline">{targetTabName}</span>
           </p>
         </div>
 
         {/* Modal Body */}
         <div className="p-6 space-y-6 bg-slate-50/50">
           
-          {/* PIN Dots Indicator */}
-          <div className="flex justify-center items-center gap-4 py-2">
-            {[0, 1, 2, 3].map(idx => (
+          {/* PIN Dots Indicator - ปรับจำนวนจุดตามความยาวรหัสที่ตั้งไว้ */}
+          <div className="flex justify-center items-center gap-2 sm:gap-3 py-2 flex-wrap">
+            {Array.from({ length: targetLength }).map((_, idx) => (
               <div
                 key={idx}
-                className={`w-4 h-4 rounded-full transition-all duration-200 border-2 ${
+                className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full transition-all duration-200 border-2 ${
                   pin.length > idx
                     ? 'bg-amber-500 border-amber-500 scale-125 shadow-md shadow-amber-200'
                     : 'bg-white border-gray-300'
@@ -109,7 +112,7 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({
             </div>
           ) : isDefaultPin() ? (
             <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-xl text-[11px] font-medium text-center">
-              💡 รหัสผ่านเริ่มต้นจากระบบคือ <span className="font-extrabold font-mono text-amber-950 bg-amber-200/80 px-1.5 py-0.5 rounded">1234</span>
+              รหัสผ่านเริ่มต้นจากระบบคือ <span className="font-extrabold font-mono text-amber-950 bg-amber-200/80 px-1.5 py-0.5 rounded">1234</span>
             </div>
           ) : null}
 
@@ -133,7 +136,6 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({
             >
               ล้าง
             </button>
-
             <button
               type="button"
               onClick={() => handleKeyPress('0')}
@@ -141,12 +143,11 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({
             >
               0
             </button>
-
             <button
               type="button"
               onClick={handleDelete}
               className="w-16 h-16 rounded-2xl bg-gray-100 border border-gray-200 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all flex items-center justify-center"
-              title="ลบตัวหลังสุด"
+              title="ลบ"
             >
               <Delete className="w-5 h-5" />
             </button>
@@ -162,7 +163,6 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({
               ยกเลิก
             </button>
           </div>
-
         </div>
       </div>
     </div>
