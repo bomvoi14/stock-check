@@ -74,13 +74,14 @@ export async function getHistoryLogs(customUrl?: string): Promise<{ logs: StockT
       const response = await fetch(`${url}?sheet=${encodeURIComponent('บันทึกสต๊อก')}`, { signal: AbortSignal.timeout(6000) });
       if (response.ok) {
         const rawData = await response.json();
-        if (Array.isArray(rawData) && rawData.length > 1) {
+        if (Array.isArray(rawData) && rawData.length >= 1) {
           // slice 1 to skip header row
           const logs: StockTransaction[] = rawData.slice(1)
             .filter((row: any) => row[0] && String(row[0]).trim() !== '')
             .map((row: any, idx: number) => {
               const rawDate = row[0];
-              const dateStr = rawDate ? new Date(rawDate).toISOString() : new Date().toISOString();
+              const parsedDate = rawDate ? new Date(rawDate) : new Date(NaN);
+              const dateStr = !Number.isNaN(parsedDate.getTime()) ? parsedDate.toISOString() : String(rawDate || '');
               return {
                 id: `gas_${idx}_${Date.now()}`,
                 timestamp: dateStr,
@@ -98,7 +99,7 @@ export async function getHistoryLogs(customUrl?: string): Promise<{ logs: StockT
             });
 
           localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(logs));
-          return { logs, source: 'gas' };
+          return { logs: [...pendingTransactions(), ...logs], source: 'gas' };
         }
       }
     } catch (e) {
@@ -112,85 +113,71 @@ export async function getHistoryLogs(customUrl?: string): Promise<{ logs: StockT
     try {
       const parsed = JSON.parse(cached);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return { logs: parsed, source: 'local' };
+        return { logs: [...pendingTransactions(), ...parsed], source: 'local' };
       }
     } catch (e) {}
   }
 
   localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(INITIAL_TRANSACTIONS));
-  return { logs: INITIAL_TRANSACTIONS, source: 'local' };
+  return { logs: [...pendingTransactions(), ...INITIAL_TRANSACTIONS], source: 'local' };
 }
 
-// Post single transaction to GAS or Local
+// Keep unsent operations separate from server-confirmed history.
+const PENDING_KEY = 'cham_prod_pending_transactions_v26';
+export function getPendingCount(): number {
+  try { return (JSON.parse(localStorage.getItem(PENDING_KEY) || '[]') as StockTransaction[]).length; }
+  catch { return 0; }
+}
+function pendingTransactions(): StockTransaction[] {
+  try {
+    const data = JSON.parse(localStorage.getItem(PENDING_KEY) || '[]');
+    return Array.isArray(data) ? data : [];
+  } catch { return []; }
+}
+function setPending(transactions: StockTransaction[]): void {
+  localStorage.setItem(PENDING_KEY, JSON.stringify(transactions));
+}
+export async function syncPendingTransactions(customUrl?: string): Promise<{ synced: number; pending: number }> {
+  const queue = pendingTransactions();
+  if (!queue.length) return { synced: 0, pending: 0 };
+  const url = customUrl || getStoredScriptUrl();
+  if (!url) return { synced: 0, pending: queue.length };
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(queue)
+  });
+  if (!response.ok) throw new Error('Server HTTP ' + response.status);
+  const result = await response.json();
+  if (result?.status !== 'success' || result.count !== queue.length) {
+    throw new Error('Server did not confirm the full batch');
+  }
+  const sentIds = new Set(queue.map(item => item.id));
+  setPending(pendingTransactions().filter(item => !sentIds.has(item.id)));
+  return { synced: queue.length, pending: getPendingCount() };
+}
+
+// Queue writes first; only report remote success after explicit GAS confirmation.
 export async function postTransaction(trans: StockTransaction, customUrl?: string): Promise<{ success: boolean; mode: 'gas' | 'local' }> {
-  const url = customUrl || getStoredScriptUrl();
-
-  // Save to LocalStorage history first to ensure no data loss
-  const cachedLogs = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
-  let logs: StockTransaction[] = [];
-  if (cachedLogs) {
-    try { logs = JSON.parse(cachedLogs); } catch (e) {}
-  }
-  const newLog: StockTransaction = {
-    ...trans,
-    id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-    timestamp: trans.timestamp || new Date().toISOString()
-  };
-  logs.unshift(newLog);
-  localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(logs));
-
-  if (url) {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(trans)
-      });
-      if (response.ok) {
-        return { success: true, mode: 'gas' };
-      }
-    } catch (e) {
-      console.warn("GAS POST failed, saved to local cache", e);
-    }
-  }
-
-  return { success: true, mode: 'local' };
+  const result = await postBatchTransactions([trans], customUrl);
+  return { success: true, mode: result.mode };
 }
 
-// Post batch transactions in single request if supported, or parallelized
 export async function postBatchTransactions(transactions: StockTransaction[], customUrl?: string): Promise<{ count: number; mode: 'gas' | 'local' }> {
-  const url = customUrl || getStoredScriptUrl();
-
-  // Always save to LocalStorage history first to prevent data loss
-  const cachedLogs = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
-  let logs: StockTransaction[] = [];
-  if (cachedLogs) {
-    try { logs = JSON.parse(cachedLogs); } catch (e) {}
-  }
-  const newLogs: StockTransaction[] = transactions.map(trans => ({
+  if (!transactions.length) return { count: 0, mode: 'local' };
+  const queued = transactions.map(trans => ({
     ...trans,
-    id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+    id: trans.id || ('tx_' + Date.now() + '_' + Math.random().toString(36).slice(2)),
     timestamp: trans.timestamp || new Date().toISOString()
   }));
-  logs = [...newLogs, ...logs];
-  localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(logs));
-
-  if (url && transactions.length > 0) {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(transactions)
-      });
-      if (response.ok) {
-        return { count: transactions.length, mode: 'gas' };
-      }
-    } catch (e) {
-      console.warn("GAS Batch POST failed, saved to local cache", e);
-    }
+  setPending([...pendingTransactions(), ...queued]);
+  try {
+    const result = await syncPendingTransactions(customUrl);
+    return { count: queued.length, mode: result.pending === 0 ? 'gas' : 'local' };
+  } catch (error) {
+    console.warn('Stock transactions are pending sync', error);
+    return { count: queued.length, mode: 'local' };
   }
-
-  return { count: transactions.length, mode: 'local' };
 }
 
 // Catalog Mutation (Local + GAS capability)
