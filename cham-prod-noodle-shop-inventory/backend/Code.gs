@@ -1,18 +1,20 @@
 /**
  * Stock Check ERP v2.6 backend.
- * Deploy as Google Apps Script Web App after backing up the spreadsheet.
+ * Deploy as a Google Apps Script Web App linked to the Cham Prod test spreadsheet.
  * The Transaction ID column is added at the end of the existing log.
  */
+var SPREADSHEET_ID = '1XiymGp8I-k-TIzBnrkKo3iUhJDfAH903Nw7bPItLhKk';
+function stockSpreadsheet_() { return SpreadsheetApp.openById(SPREADSHEET_ID); }
 function json_(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 }
 function doGet(e) {
   var name = e && e.parameter && e.parameter.sheet || 'catalog';
-  if (name === 'catalog') name = 'ตั้งค่าสินค้า';
+  if (name === 'catalog') name = 'catalog';
   if (name === 'บันทึกสต๊อก') name = 'ธุรกรรมสต๊อก';
-  if (name !== 'ตั้งค่าสินค้า' && name !== 'ธุรกรรมสต๊อก') return json_({status:'error',message:'Invalid sheet'});
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  if (name !== 'catalog' && name !== 'ธุรกรรมสต๊อก') return json_({status:'error',message:'Invalid sheet'});
+  var sheet = stockSpreadsheet_().getSheetByName(name);
   return json_(sheet ? sheet.getDataRange().getValues() : []);
 }
 function doPost(e) {
@@ -22,7 +24,7 @@ function doPost(e) {
     var payload = JSON.parse(e.postData.contents);
     var items = Array.isArray(payload) ? payload : [payload];
     if (!items.length || items.length > 500) throw new Error('Invalid batch size');
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = stockSpreadsheet_();
     var sheet = ss.getSheetByName('ธุรกรรมสต๊อก') || ss.insertSheet('ธุรกรรมสต๊อก');
     if (sheet.getLastRow() === 0) sheet.appendRow(['Timestamp','ผู้บันทึก','ร้าน/จุดจัดเก็บ','ประเภทรายการ','หมวดหมู่','รายการสินค้า','จำนวน','หน่วย','ราคารวม','หมายเหตุ','หมายเหตุแปลไทย','Transaction ID']);
     if (sheet.getLastColumn() < 12) sheet.getRange(1,12).setValue('Transaction ID');
