@@ -83,23 +83,23 @@ export async function getHistoryLogs(customUrl?: string): Promise<{ logs: StockT
               const parsedDate = rawDate ? new Date(rawDate) : new Date(NaN);
               const dateStr = !Number.isNaN(parsedDate.getTime()) ? parsedDate.toISOString() : String(rawDate || '');
               return {
-                id: `gas_${idx}_${Date.now()}`,
+                id: String(row[11] || `legacy_${idx}`),
                 timestamp: dateStr,
                 checked_by: String(row[1] || 'พนักงาน').trim(),
                 station: String(row[2] || 'ก๋วยเตี๋ยวหมู').trim(),
                 action_type: (row[3] === 'รับเข้า' ? 'รับเข้า' : 'เช็คสต็อก') as any,
                 category: String(row[4] || 'ทั่วไป').trim(),
                 item_name: String(row[5] || row[4] || '-').trim(),
-                quantity: parseFloat(row[6]) || parseFloat(row[5]) || 0,
-                unit: String(row[7] || row[6] || '').trim(),
-                price: parseFloat(row[8]) || '',
+                quantity: Number(row[6]) || 0,
+                unit: String(row[7] ?? '').trim(),
+                price: row[8] === '' ? '' : (Number(row[8]) || 0),
                 note: String(row[9] || '').trim(),
                 translatedNote: String(row[10] || row[9] || '').trim()
               };
             });
 
           localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(logs));
-          return { logs: [...pendingTransactions(), ...logs], source: 'gas' };
+          return { logs: [...pendingTransactions().filter(p => !logs.some(log => log.id === p.id)), ...logs], source: 'gas' };
         }
       }
     } catch (e) {
@@ -137,7 +137,13 @@ function pendingTransactions(): StockTransaction[] {
 function setPending(transactions: StockTransaction[]): void {
   localStorage.setItem(PENDING_KEY, JSON.stringify(transactions));
 }
-export async function syncPendingTransactions(customUrl?: string): Promise<{ synced: number; pending: number }> {
+let syncInFlight: Promise<{ synced: number; pending: number }> | null = null;
+export function syncPendingTransactions(customUrl?: string): Promise<{ synced: number; pending: number }> {
+  if (syncInFlight) return syncInFlight;
+  syncInFlight = performSync(customUrl).finally(() => { syncInFlight = null; });
+  return syncInFlight;
+}
+async function performSync(customUrl?: string): Promise<{ synced: number; pending: number }> {
   const queue = pendingTransactions();
   if (!queue.length) return { synced: 0, pending: 0 };
   const url = customUrl || getStoredScriptUrl();
