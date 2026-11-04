@@ -26,17 +26,17 @@ export async function getCatalogItems(customUrl?: string): Promise<{ items: Cata
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data) && data.length > 0) {
-          const catalogRows = Array.isArray(data[0]) && String(data[0][2] || '').trim().toLowerCase() === 'name' ? data.slice(1) : data;
+          const catalogRows = Array.isArray(data[0]) && ['name','ชื่อสินค้า'].includes(String(data[0][2] || '').trim().toLowerCase()) ? data.slice(1) : data;
           const items: CatalogItem[] = catalogRows.map((row: any, idx: number) => ({
             id: String(idx + 1),
             sheet: row.sheet || row[0] || 'ก๋วยเตี๋ยวหมู',
             category: row.category || row[1] || 'ทั่วไป',
             name: String(row.name || row[2] || '').trim(),
             unit: String(row.unit || row[3] || '').trim(),
-            min: parseFloat(row.min || row[4]) || 0,
-            max: parseFloat(row.max || row[5]) || 0,
-            la: String(row.la || row[6] || '').trim(),
-            mm: String(row.mm || row[7] || '').trim()
+            min: Number(row.min ?? row[7]) || 0,
+            max: Number(row.max ?? row[8]) || 0,
+            la: String(row.la ?? row[5] ?? '').trim(),
+            mm: String(row.mm ?? row[6] ?? '').trim()
           })).filter(i => i.name.length > 0);
 
           if (items.length > 0) {
