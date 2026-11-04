@@ -26,7 +26,8 @@ export async function getCatalogItems(customUrl?: string): Promise<{ items: Cata
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data) && data.length > 0) {
-          const items: CatalogItem[] = data.map((row: any, idx: number) => ({
+          const catalogRows = Array.isArray(data[0]) && String(data[0][2] || '').trim().toLowerCase() === 'name' ? data.slice(1) : data;
+          const items: CatalogItem[] = catalogRows.map((row: any, idx: number) => ({
             id: String(idx + 1),
             sheet: row.sheet || row[0] || 'ก๋วยเตี๋ยวหมู',
             category: row.category || row[1] || 'ทั่วไป',
