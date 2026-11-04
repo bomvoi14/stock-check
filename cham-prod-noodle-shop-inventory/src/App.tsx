@@ -14,6 +14,7 @@ import {
   setSessionUnlocked
 } from './services/pinService';
 
+import { computeMultiLocationInventory } from './services/inventoryAggregator';
 import { Header } from './components/Header';
 import { Navigation, ActiveTab } from './components/Navigation';
 import { StockCheckView } from './components/StockCheckView';
@@ -138,7 +139,7 @@ export default function App() {
   const handleSaveReceiveGoods = async (transactions: StockTransaction[]) => {
     setIsSaving(true);
     try {
-      await postBatchTransactions(transactions);
+      const result = await postBatchTransactions(transactions);
       setConfirmModal(prev => ({ ...prev, isOpen: false }));
       showToast(result.mode === 'gas' ? '✅ ส่งรายการรับของเข้า Google Sheets แล้ว' : '📱 เก็บรายการรับของในเครื่อง รอส่งเมื่อออนไลน์');
       await loadData();
@@ -173,39 +174,9 @@ export default function App() {
     });
   };
 
-  // Count restock items for badge indicator
-  const calculateRestockBadgeCount = (): number => {
-    const latestCheckMap: Record<string, number> = {};
-    const receiveAfterCheckMap: Record<string, number> = {};
-
-    historyLogs.forEach(log => {
-      const isCheck = !log.action_type || log.action_type === 'เช็คสต็อก';
-      if (isCheck) {
-        latestCheckMap[log.item_name] = parseFloat(String(log.quantity)) || 0;
-      }
-    });
-
-    historyLogs.forEach(log => {
-      if (log.action_type === 'รับเข้า') {
-        receiveAfterCheckMap[log.item_name] =
-          (receiveAfterCheckMap[log.item_name] || 0) + (parseFloat(String(log.quantity)) || 0);
-      }
-    });
-
-    let count = 0;
-    catalogItems.forEach(item => {
-      const minStock = parseFloat(String(item.min));
-      if (!isNaN(minStock)) {
-        const base = latestCheckMap[item.name] || 0;
-        const add = receiveAfterCheckMap[item.name] || 0;
-        if (base + add <= minStock) count++;
-      }
-    });
-
-    return count;
-  };
-
-  const restockBadgeCount = calculateRestockBadgeCount();
+  // Use the same stock engine for the badge and purchase list.
+  const restockBadgeCount = computeMultiLocationInventory(catalogItems, historyLogs)
+    .filter(item => item.totalMinQty > 0 && item.isLowStock).length;
 
   return (
     <div className="min-h-screen bg-[#fdf6e3] text-gray-900 font-sans p-3 sm:p-5 md:p-8 antialiased selection:bg-amber-200">
