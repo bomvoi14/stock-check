@@ -80,7 +80,7 @@ export function computeMultiLocationInventory(
   }> = {};
 
   catalogItems.forEach(item => {
-    const normName = (item.name || '').trim().toLowerCase();
+    const normName = `${(item.name || '').trim().toLowerCase()}:::${(item.unit || '').trim().toLowerCase()}`;
     if (!groupedCatalog[normName]) {
       groupedCatalog[normName] = {
         originalName: item.name.trim(),
@@ -106,7 +106,7 @@ export function computeMultiLocationInventory(
     // Collect station info from catalog entries
     group.catalogItemsList.forEach(catItem => {
       const station = catItem.sheet;
-      const key = `${normName}:::${station}`;
+      const key = `${group.originalName.trim().toLowerCase()}:::${station}`;
 
       const checkEntry = stationCheckMap[key];
       const baseQty = checkEntry ? checkEntry.qty : 0;
@@ -127,7 +127,7 @@ export function computeMultiLocationInventory(
 
     // Also check if there are transaction records for this item in stations NOT listed in catalog
     Object.keys(stationCheckMap).forEach(key => {
-      if (key.startsWith(`${normName}:::`)) {
+      if (key.startsWith(`${group.originalName.trim().toLowerCase()}:::`)) {
         const station = key.split(':::')[1];
         const alreadyIncluded = stationsList.some(s => s.station === station);
 
