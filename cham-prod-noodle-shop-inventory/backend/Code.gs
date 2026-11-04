@@ -9,7 +9,9 @@ function json_(data) {
 }
 function doGet(e) {
   var name = e && e.parameter && e.parameter.sheet || 'catalog';
-  if (name !== 'catalog' && name !== 'บันทึกสต๊อก') return json_({status:'error',message:'Invalid sheet'});
+  if (name === 'catalog') name = 'ตั้งค่าสินค้า';
+  if (name === 'บันทึกสต๊อก') name = 'ธุรกรรมสต๊อก';
+  if (name !== 'ตั้งค่าสินค้า' && name !== 'ธุรกรรมสต๊อก') return json_({status:'error',message:'Invalid sheet'});
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   return json_(sheet ? sheet.getDataRange().getValues() : []);
 }
@@ -21,7 +23,7 @@ function doPost(e) {
     var items = Array.isArray(payload) ? payload : [payload];
     if (!items.length || items.length > 500) throw new Error('Invalid batch size');
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('บันทึกสต๊อก') || ss.insertSheet('บันทึกสต๊อก');
+    var sheet = ss.getSheetByName('ธุรกรรมสต๊อก') || ss.insertSheet('ธุรกรรมสต๊อก');
     if (sheet.getLastRow() === 0) sheet.appendRow(['Timestamp','ผู้บันทึก','ร้าน/จุดจัดเก็บ','ประเภทรายการ','หมวดหมู่','รายการสินค้า','จำนวน','หน่วย','ราคารวม','หมายเหตุ','หมายเหตุแปลไทย','Transaction ID']);
     if (sheet.getLastColumn() < 12) sheet.getRange(1,12).setValue('Transaction ID');
     var existing = new Set();
