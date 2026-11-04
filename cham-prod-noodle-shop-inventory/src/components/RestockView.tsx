@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CatalogItem, StockTransaction, RestockItem, Language } from '../types';
 import { i18nDict } from '../data/i18n';
 import { computeMultiLocationInventory } from '../services/inventoryAggregator';
@@ -60,8 +60,17 @@ export const RestockView: React.FC<RestockViewProps> = ({
     return results;
   };
 
-  const initialRestockItems = computeRestockList();
-  const [items, setItems] = useState<{ restockItem: RestockItem; stationBreakdown?: { station: string; qty: number }[] }[]>(initialRestockItems);
+  const computedItems = useMemo(computeRestockList, [catalogItems, historyLogs]);
+  const [items, setItems] = useState<{ restockItem: RestockItem; stationBreakdown?: { station: string; qty: number }[] }[]>(computedItems);
+  useEffect(() => {
+    setItems(previous => computedItems.map(entry => {
+      const existing = previous.find(p => p.restockItem.item.id === entry.restockItem.item.id);
+      return existing ? {
+        ...entry,
+        restockItem: { ...entry.restockItem, editableBuyQty: existing.restockItem.editableBuyQty }
+      } : entry;
+    }));
+  }, [computedItems]);
 
   const handleBuyQtyChange = (itemId: string, qtyVal: number) => {
     setItems(prev =>
