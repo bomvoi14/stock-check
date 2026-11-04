@@ -4,7 +4,9 @@ import {
   getCatalogItems,
   getHistoryLogs,
   postBatchTransactions,
-  saveCatalogItems
+  saveCatalogItems,
+  getPendingCount,
+  syncPendingTransactions
 } from './services/gasService';
 import {
   isPinEnabled,
@@ -30,6 +32,7 @@ export default function App() {
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [historyLogs, setHistoryLogs] = useState<StockTransaction[]>([]);
   const [dataMode, setDataMode] = useState<'gas' | 'local'>('local');
+  const [pendingCount, setPendingCount] = useState(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
@@ -96,7 +99,8 @@ export default function App() {
       const [catRes, histRes] = await Promise.all([getCatalogItems(), getHistoryLogs()]);
       setCatalogItems(catRes.items);
       setHistoryLogs(histRes.logs);
-      setDataMode(catRes.source === 'gas' || histRes.source === 'gas' ? 'gas' : 'local');
+      setDataMode(catRes.source === 'gas' && histRes.source === 'gas' ? 'gas' : 'local');
+      setPendingCount(getPendingCount());
     } catch (e) {
       console.error("Failed loading initial data", e);
     } finally {
@@ -105,16 +109,22 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadData();
+    const refresh = () => {
+      syncPendingTransactions().catch(error => console.warn('Pending sync failed', error))
+        .finally(() => loadData());
+    };
+    refresh();
+    window.addEventListener('online', refresh);
+    return () => window.removeEventListener('online', refresh);
   }, []);
 
   // Save Check Stock Transactions
   const handleSaveCheckStock = async (transactions: StockTransaction[]) => {
     setIsSaving(true);
     try {
-      await postBatchTransactions(transactions);
+      const result = await postBatchTransactions(transactions);
       setConfirmModal(prev => ({ ...prev, isOpen: false }));
-      showToast('✅ บันทึกผลการตรวจนับสต็อกสำเร็จ!');
+      showToast(result.mode === 'gas' ? '✅ ส่งผลตรวจนับเข้า Google Sheets แล้ว' : '📱 เก็บผลตรวจนับในเครื่อง รอส่งเมื่อออนไลน์');
       await loadData();
       setActiveTab('history');
     } catch (e) {
@@ -130,7 +140,7 @@ export default function App() {
     try {
       await postBatchTransactions(transactions);
       setConfirmModal(prev => ({ ...prev, isOpen: false }));
-      showToast('✅ บันทึกรายการรับของเข้าคลังสำเร็จ!');
+      showToast(result.mode === 'gas' ? '✅ ส่งรายการรับของเข้า Google Sheets แล้ว' : '📱 เก็บรายการรับของในเครื่อง รอส่งเมื่อออนไลน์');
       await loadData();
       setActiveTab('history');
     } catch (e) {
@@ -211,6 +221,12 @@ export default function App() {
           isSettingsActive={activeTab === 'settings'}
         />
 
+        {pendingCount > 0 && (
+          <div role="status" className="my-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-bold text-amber-900">
+            มี {pendingCount} รายการรอส่ง Google Sheets — กรุณาอย่าล้างข้อมูลเว็บไซต์
+            <button className="ml-3 underline" onClick={() => syncPendingTransactions().then(loadData).catch(() => showToast('ยังส่งไม่สำเร็จ กรุณาลองใหม่'))}>ลองส่งอีกครั้ง</button>
+          </div>
+        )}
         {/* Navigation Bar */}
         <Navigation
           activeTab={activeTab}
