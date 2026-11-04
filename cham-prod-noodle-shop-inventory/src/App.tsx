@@ -4,7 +4,9 @@ import {
   getCatalogItems,
   getHistoryLogs,
   postBatchTransactions,
-  saveCatalogItems
+  saveCatalogItems,
+  getPendingCount,
+  syncPendingTransactions
 } from './services/gasService';
 import {
   isPinEnabled,
@@ -12,6 +14,7 @@ import {
   setSessionUnlocked
 } from './services/pinService';
 
+import { computeMultiLocationInventory } from './services/inventoryAggregator';
 import { Header } from './components/Header';
 import { Navigation, ActiveTab } from './components/Navigation';
 import { StockCheckView } from './components/StockCheckView';
@@ -30,6 +33,7 @@ export default function App() {
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [historyLogs, setHistoryLogs] = useState<StockTransaction[]>([]);
   const [dataMode, setDataMode] = useState<'gas' | 'local'>('local');
+  const [pendingCount, setPendingCount] = useState(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
@@ -96,7 +100,8 @@ export default function App() {
       const [catRes, histRes] = await Promise.all([getCatalogItems(), getHistoryLogs()]);
       setCatalogItems(catRes.items);
       setHistoryLogs(histRes.logs);
-      setDataMode(catRes.source === 'gas' || histRes.source === 'gas' ? 'gas' : 'local');
+      setDataMode(catRes.source === 'gas' && histRes.source === 'gas' ? 'gas' : 'local');
+      setPendingCount(getPendingCount());
     } catch (e) {
       console.error("Failed loading initial data", e);
     } finally {
@@ -105,16 +110,22 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadData();
+    const refresh = () => {
+      syncPendingTransactions().catch(error => console.warn('Pending sync failed', error))
+        .finally(() => loadData());
+    };
+    refresh();
+    window.addEventListener('online', refresh);
+    return () => window.removeEventListener('online', refresh);
   }, []);
 
   // Save Check Stock Transactions
   const handleSaveCheckStock = async (transactions: StockTransaction[]) => {
     setIsSaving(true);
     try {
-      await postBatchTransactions(transactions);
+      const result = await postBatchTransactions(transactions);
       setConfirmModal(prev => ({ ...prev, isOpen: false }));
-      showToast('✅ บันทึกผลการตรวจนับสต็อกสำเร็จ!');
+      showToast(result.mode === 'gas' ? '✅ ส่งผลตรวจนับเข้า Google Sheets แล้ว' : '📱 เก็บผลตรวจนับในเครื่อง รอส่งเมื่อออนไลน์');
       await loadData();
       setActiveTab('history');
     } catch (e) {
@@ -128,9 +139,9 @@ export default function App() {
   const handleSaveReceiveGoods = async (transactions: StockTransaction[]) => {
     setIsSaving(true);
     try {
-      await postBatchTransactions(transactions);
+      const result = await postBatchTransactions(transactions);
       setConfirmModal(prev => ({ ...prev, isOpen: false }));
-      showToast('✅ บันทึกรายการรับของเข้าคลังสำเร็จ!');
+      showToast(result.mode === 'gas' ? '✅ ส่งรายการรับของเข้า Google Sheets แล้ว' : '📱 เก็บรายการรับของในเครื่อง รอส่งเมื่อออนไลน์');
       await loadData();
       setActiveTab('history');
     } catch (e) {
@@ -163,39 +174,9 @@ export default function App() {
     });
   };
 
-  // Count restock items for badge indicator
-  const calculateRestockBadgeCount = (): number => {
-    const latestCheckMap: Record<string, number> = {};
-    const receiveAfterCheckMap: Record<string, number> = {};
-
-    historyLogs.forEach(log => {
-      const isCheck = !log.action_type || log.action_type === 'เช็คสต็อก';
-      if (isCheck) {
-        latestCheckMap[log.item_name] = parseFloat(String(log.quantity)) || 0;
-      }
-    });
-
-    historyLogs.forEach(log => {
-      if (log.action_type === 'รับเข้า') {
-        receiveAfterCheckMap[log.item_name] =
-          (receiveAfterCheckMap[log.item_name] || 0) + (parseFloat(String(log.quantity)) || 0);
-      }
-    });
-
-    let count = 0;
-    catalogItems.forEach(item => {
-      const minStock = parseFloat(String(item.min));
-      if (!isNaN(minStock)) {
-        const base = latestCheckMap[item.name] || 0;
-        const add = receiveAfterCheckMap[item.name] || 0;
-        if (base + add <= minStock) count++;
-      }
-    });
-
-    return count;
-  };
-
-  const restockBadgeCount = calculateRestockBadgeCount();
+  // Use the same stock engine for the badge and purchase list.
+  const restockBadgeCount = computeMultiLocationInventory(catalogItems, historyLogs)
+    .filter(item => item.totalMinQty > 0 && item.isLowStock).length;
 
   return (
     <div className="min-h-screen bg-[#fdf6e3] text-gray-900 font-sans p-3 sm:p-5 md:p-8 antialiased selection:bg-amber-200">
@@ -211,6 +192,12 @@ export default function App() {
           isSettingsActive={activeTab === 'settings'}
         />
 
+        {pendingCount > 0 && (
+          <div role="status" className="my-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-bold text-amber-900">
+            มี {pendingCount} รายการรอส่ง Google Sheets — กรุณาอย่าล้างข้อมูลเว็บไซต์
+            <button className="ml-3 underline" onClick={() => syncPendingTransactions().then(loadData).catch(() => showToast('ยังส่งไม่สำเร็จ กรุณาลองใหม่'))}>ลองส่งอีกครั้ง</button>
+          </div>
+        )}
         {/* Navigation Bar */}
         <Navigation
           activeTab={activeTab}
